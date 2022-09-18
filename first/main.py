@@ -10,18 +10,26 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow,self).__init__()
         uic.loadUi("FormApp.ui",self)
-        self.loadButDB.clicked.connect(self.browsefiles)
+        self.loadButDB.clicked.connect(self.LoadDB)
+        self.BrowBut.clicked.connect(self.browsefiles)
         self.OutButTable.clicked.connect(self.ShowDB)
         self.tableDB.setSortingEnabled(True)
 
     def browsefiles(self):
-        fname = QFileDialog.getOpenFileName(self, 'Open file', 'C:\Project1\PrSUBD\DataBase', '(*.db)')
-        self.loadButDB_1.setText(fname[0])
-        self.db.setDatabaseName(fname[0])
-        if not self.db.open() or fname[0]=='':
-            self.connectDB = False
+        fname = QFileDialog.getOpenFileName(self, 'Open file', '..\DataBase\ ', '(*.db)')
+        self.BrowLine.setText(fname[0])
+
+    def LoadDB(self):
+        if self.BrowLine.text() != '':
+            self.loadButDB_1.setText('')
+            self.db.setDatabaseName(self.BrowLine.text())
+            if not self.db.open():
+                self.connectDB = False
+            else:
+                self.connectDB = True
         else:
-            self.connectDB = True
+            self.loadButDB_1.setText('Укажите путь')
+            self.connectDB = False
 
     def ShowDB(self):
         self.OutButTable_1.setText('Работает')
