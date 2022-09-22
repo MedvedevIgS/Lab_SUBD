@@ -1,4 +1,4 @@
-from PyQt6 import uic, QtCore, QtWidgets, QtGui
+from PyQt6 import uic, QtCore, QtWidgets
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt6.QtSql import *
 import sqlite3
@@ -10,6 +10,7 @@ class MainWindow(QMainWindow):
     db=QSqlDatabase.addDatabase('QSQLITE')
     connectDB=False
     filter = ''
+    Name_table=''
     def __init__(self):
         super(MainWindow,self).__init__()
         uic.loadUi("FormApp.ui",self)
@@ -18,17 +19,10 @@ class MainWindow(QMainWindow):
         self.BrowBut.clicked.connect(self.browsefiles)
         self.filterBut.clicked.connect(self.filter_use)
         self.tableDB.setSortingEnabled(True)
-        self.RB1.setVisible(False)
-        self.RB2.setVisible(False)
-        self.RB3.setVisible(False)
-        self.RB4.setVisible(False)
-        self.RB5.setVisible(False)
-        self.RB6.setVisible(False)
-        self.RB7.setVisible(False)
-        self.RB8.setVisible(False)
-        radBut = QtWidgets.QRadioButton('radBut')
-        radBut.move(310, 100)
-
+        RB0=QtWidgets.QRadioButton()
+        RBmass=(self.RB1, self.RB2, self.RB3, self.RB4, self.RB5, self.RB6, self.RB7, self.RB8)
+        for RB in RBmass:
+            RB.setVisible(False)
 
     def browsefiles(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file', '..\DataBase\ ', '(*.db)')
@@ -39,23 +33,39 @@ class MainWindow(QMainWindow):
             if os.path.isfile(self.BrowLine.text()):
                 self.loadButDB_1.setText('')
                 self.db.setDatabaseName(self.BrowLine.text())
-                table = QSqlTableModel()
-                table.setTable('F_USD')
-                table.setFilter(self.filter)
-                print(table.filter())
-                table.select()
-                print('table - '+table.tableName())
-
-                sqlqery = QSqlQuery()
-                # sqlqery.exec("SELECT * FROM F_USD")
-                self.tableDB.setModel(table)
-                connectDB = True
+                con = sqlite3.connect(self.BrowLine.text())
+                cur = con.cursor()
+                sql = "SELECT name FROM sqlite_master WHERE TYPE = 'table'"
+                Ntabl = cur.execute(sql).fetchall()
+                print(len(Ntabl))
+                print(Ntabl[1][0])
+                RBmass=(self.RB1, self.RB2, self.RB3, self.RB4, self.RB5, self.RB6, self.RB7, self.RB8)
+                for i in range(len(Ntabl)):
+                    RBmass[i].setVisible(True)
+                    RBmass[i].setText(Ntabl[i][0])
+                    RBmass[i].toggled.connect(self.RB_z)
             else:
                 self.loadButDB_1.setText('Указан неверный путь')
-                connectDB = False
+                self.connectDB = False
         else:
             self.loadButDB_1.setText('Укажите Путь')
-            connectDB = False
+            self.connectDB = False
+
+    def RB_z(self):
+        rb = self.sender()
+        if rb.isChecked():
+            self.Name_table = rb.text()
+            self.loadtable()
+
+    def loadtable(self):
+        table = QSqlTableModel()
+        table.setTable(self.Name_table)
+        table.setFilter(self.filter)
+        print('Filter: ' + table.filter())
+        table.select()
+        print('table - ' + table.tableName())
+        self.tableDB.setModel(table)
+        self.connectDB = True
 
 
     def filter_use(self):
