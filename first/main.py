@@ -55,7 +55,18 @@ class MainWindow(QMainWindow):
         rb = self.sender()
         if rb.isChecked():
             self.Name_table = rb.text()
+            con = sqlite3.connect(self.BrowLine.text())
+            cur = con.cursor()
+            sql = "SELECT DISTINCT kod FROM F_USD"
+            kod = cur.execute(sql).fetchall()
+            print(len(kod))
+            self.KodBox.addItem('')
+            for i in range(len(kod)):
+                print(kod[i][0])
+                self.KodBox.addItem(kod[i][0])
             self.loadtable()
+            cur.close()
+            con.close()
 
     def loadtable(self):
         table = QSqlTableModel()
@@ -71,7 +82,42 @@ class MainWindow(QMainWindow):
     def filter_use(self):
         if self.connectDB:
             self.OutButTable_2.setText('')
-            filter_count = 0
+            self.filter=''
+            filter_check = False
+            if (self.filterDate1.text() != ''):
+                filt1='torg_date >= '+self.filterDate1.text()
+                self.filter=self.filter+filt1
+                filter_check=True
+            if (self.filterDate2.text() != ''):
+                filt2='torg_date <= '+self.filterDate2.text()
+                if filter_check:
+                    self.filter = self.filter + ' AND ' + filt2
+                else:
+                    self.filter = self.filter + filt2
+                filter_check = True
+
+            if (self.filterq1.text()!= ''):
+                filt3='quotation>='+self.filterq1.text()
+                if filter_check:
+                    self.filter = self.filter + ' AND ' + filt3
+                else:
+                    self.filter = self.filter + filt3
+                filter_check = True
+            if (self.filterq2.text() != ''):
+                filt4='quotation<='+self.filterq2.text()
+                if filter_check:
+                    self.filter = self.filter + ' AND ' + filt4
+                else:
+                    self.filter = self.filter + filt4
+                filter_check = True
+            if (self.KodBox.currentText() != ''):
+                filt5="kod = '"+self.KodBox.currentText()+"'"
+                if filter_check:
+                    self.filter = self.filter + ' AND ' + filt5
+                else:
+                    self.filter = self.filter + filt5
+            print(self.filter)
+            self.loadtable()
         else:
             self.OutButTable_2.setText('Загрузите БД')
             EmptyTab=QSqlTableModel()

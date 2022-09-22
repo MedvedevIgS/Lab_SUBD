@@ -159,7 +159,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="filterDate"/>
+            <widget class="QLineEdit" name="filterDate1"/>
            </item>
           </layout>
          </item>
@@ -185,7 +185,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineEdit_3"/>
+            <widget class="QLineEdit" name="filterDate2"/>
            </item>
           </layout>
          </item>
@@ -194,7 +194,7 @@
       </layout>
      </item>
      <item>
-      <widget class="QComboBox" name="comboBox"/>
+      <widget class="QComboBox" name="KodBox"/>
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -288,7 +288,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineEdit_4"/>
+            <widget class="QLineEdit" name="filterq1"/>
            </item>
           </layout>
          </item>
@@ -314,7 +314,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineEdit_7"/>
+            <widget class="QLineEdit" name="filterq2"/>
            </item>
           </layout>
          </item>
