@@ -89,13 +89,13 @@ class MainWindow(QMainWindow):
 
 
     def filter_use(self):
+        print('клик')
         if self.connectDB:
             self.OutButTable_2.setText('')
             self.filter=''
             filter_check = False
             Dateot=['1900','01','01']
             Datedo=['2022','12','31']
-
             if (self.filterDate2_age.text() != ''):
                 if int(self.filterDate2_age.text())<1000 or len(self.filterDate2_age.text())<4:
                     self.filterDate2_age.setText('1000')
@@ -117,7 +117,7 @@ class MainWindow(QMainWindow):
                     self.filterDate2_day.setText('01')
 
 
-                if int(self.filterDate2_age.text())%4!=0:                                # високосный ли год
+                if int(Datedo[0])%4!=0:                                # високосный ли год
                     if int(self.filterDate2_day.text()) > 28 and self.filterDate2_month.text()=='02':
                         self.filterDate2_day.setText('28')
                 else:
@@ -131,6 +131,8 @@ class MainWindow(QMainWindow):
                     else:
                         if int(self.filterDate2_day.text()) > 31 and self.filterDate2_month.text()!='02':
                             self.filterDate2_day.setText('31')
+                if len(self.filterDate2_day.text()) < 2:
+                    self.filterDate2_day.setText('0' + self.filterDate2_day.text())
                 Datedo[2]=self.filterDate2_day.text()
 
 
@@ -145,14 +147,14 @@ class MainWindow(QMainWindow):
                 if int(self.filterDate1_month.text()) > 12:
                     self.filterDate1_month.setText('12')
                 if len(self.filterDate1_month.text()) < 2:
-                    self.filterDate2_month.setText('0'+self.filterDate1_month.text())
+                    self.filterDate1_month.setText('0'+self.filterDate1_month.text())
                 Dateot[1]=self.filterDate1_month.text()
 
             if (self.filterDate1_day.text() != ''):
                 if int(self.filterDate1_day.text()) < 1:
                     self.filterDate1_day.setText('01')
 
-                if int(self.filterDate1_age.text()) % 4 != 0:  # високосный ли год
+                if int(Dateot[0])% 4 != 0:  # високосный ли год
                     if int(self.filterDate1_day.text()) > 28 and self.filterDate1_month.text() == '02':
                         self.filterDate1_day.setText('28')
                 else:
@@ -165,33 +167,27 @@ class MainWindow(QMainWindow):
                     else:
                         if int(self.filterDate1_day.text()) > 31 and self.filterDate1_month.text() != '02':
                             self.filterDate1_day.setText('31')
+                if len(self.filterDate1_day.text()) < 2:
+                    self.filterDate1_day.setText('0' + self.filterDate1_day.text())
                 Dateot[2] = self.filterDate1_day.text()
 
-            DateOT=Dateot[0]+'-'+Dateot[1]+'-'+Dateot[2]
-            DateDO = Datedo[0] + '-' + Datedo[1] + '-' + Datedo[2]
+            DateOT=Dateot[0]+'.'+Dateot[1]+'.'+Dateot[2]
+            DateDO = Datedo[0] + '.' + Datedo[1] + '.' + Datedo[2]
             print(DateOT+'\t:\t'+DateDO)
-
+            self.filter=self.filter+"torg_date_2>='"+DateOT+"' AND torg_date_2<='"+DateDO+"'"
 
             if (self.filterq1.text()!= ''):
                 filt3='quotation>='+self.filterq1.text()
-                if filter_check:
-                    self.filter = self.filter + ' AND ' + filt3
-                else:
-                    self.filter = self.filter + filt3
-                filter_check = True
+                self.filter = self.filter + ' AND ' + filt3
+
             if (self.filterq2.text() != ''):
                 filt4='quotation<='+self.filterq2.text()
-                if filter_check:
-                    self.filter = self.filter + ' AND ' + filt4
-                else:
-                    self.filter = self.filter + filt4
-                filter_check = True
+                self.filter = self.filter + ' AND ' + filt4
+
             if (self.KodBox.currentText() != ''):
                 filt5="kod = '"+self.KodBox.currentText()+"'"
-                if filter_check:
-                    self.filter = self.filter + ' AND ' + filt5
-                else:
-                    self.filter = self.filter + filt5
+                self.filter = self.filter + ' AND ' + filt5
+
             print(self.filter)
             self.loadtable()
         else:
