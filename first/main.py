@@ -1,6 +1,7 @@
 from PyQt6 import uic, QtCore, QtWidgets
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt6.QtSql import *
+from PyQt6.QtGui import QIntValidator
 import sqlite3
 import os
 
@@ -19,6 +20,14 @@ class MainWindow(QMainWindow):
         self.BrowBut.clicked.connect(self.browsefiles)
         self.filterBut.clicked.connect(self.filter_use)
         self.tableDB.setSortingEnabled(True)
+        self.filterDate1_age.setValidator(QIntValidator())
+        self.filterDate1_month.setValidator(QIntValidator())
+        self.filterDate1_day.setValidator(QIntValidator())
+        self.filterDate2_age.setValidator(QIntValidator())
+        self.filterDate2_month.setValidator(QIntValidator())
+        self.filterDate2_day.setValidator(QIntValidator())
+        self.filterq1.setValidator(QIntValidator())
+        self.filterq2.setValidator(QIntValidator())
         RB0=QtWidgets.QRadioButton()
         RBmass=(self.RB1, self.RB2, self.RB3, self.RB4, self.RB5, self.RB6, self.RB7, self.RB8)
         for RB in RBmass:
@@ -84,17 +93,84 @@ class MainWindow(QMainWindow):
             self.OutButTable_2.setText('')
             self.filter=''
             filter_check = False
-            if (self.filterDate1.text() != ''):
-                filt1='torg_date >= '+self.filterDate1.text()
-                self.filter=self.filter+filt1
-                filter_check=True
-            if (self.filterDate2.text() != ''):
-                filt2='torg_date <= '+self.filterDate2.text()
-                if filter_check:
-                    self.filter = self.filter + ' AND ' + filt2
+            Dateot=['1900','01','01']
+            Datedo=['2022','12','31']
+
+            if (self.filterDate2_age.text() != ''):
+                if int(self.filterDate2_age.text())<1000 or len(self.filterDate2_age.text())<4:
+                    self.filterDate2_age.setText('1000')
+                Datedo[0]=self.filterDate2_age.text()
+
+            if (self.filterDate2_month.text() != ''):
+                if int(self.filterDate2_month.text()) < 1:
+                    self.filterDate2_month.setText('01')
+                if int(self.filterDate2_month.text()) > 12:
+                    self.filterDate2_month.setText('12')
+                if len(self.filterDate2_month.text()) < 2:
+                    self.filterDate2_month.setText('0'+self.filterDate2_month.text())
+                Datedo[1]=self.filterDate2_month.text()
+
+
+
+            if (self.filterDate2_day.text() != ''):
+                if int(self.filterDate2_day.text()) < 1:
+                    self.filterDate2_day.setText('01')
+
+
+                if int(self.filterDate2_age.text())%4!=0:                                # високосный ли год
+                    if int(self.filterDate2_day.text()) > 28 and self.filterDate2_month.text()=='02':
+                        self.filterDate2_day.setText('28')
                 else:
-                    self.filter = self.filter + filt2
-                filter_check = True
+                    if int(self.filterDate2_day.text()) > 29 and self.filterDate2_month.text() == '02':
+                        self.filterDate2_day.setText('29')
+
+
+                if int(self.filterDate2_day.text()) > 30:
+                    if self.filterDate2_month.text() == '04' or self.filterDate2_month.text() == '06' or self.filterDate2_month.text() == '09' or self.filterDate2_month.text() == '11':
+                        self.filterDate2_day.setText('30')
+                    else:
+                        if int(self.filterDate2_day.text()) > 31 and self.filterDate2_month.text()!='02':
+                            self.filterDate2_day.setText('31')
+                Datedo[2]=self.filterDate2_day.text()
+
+
+            if (self.filterDate1_age.text() != ''):
+                if int(self.filterDate1_age.text())<1000 or len(self.filterDate1_age.text())<4:
+                    self.filterDate1_age.setText('1000')
+                Dateot[0]=self.filterDate1_age.text()
+
+            if (self.filterDate1_month.text() != ''):
+                if int(self.filterDate1_month.text()) < 1:
+                    self.filterDate1_month.setText('01')
+                if int(self.filterDate1_month.text()) > 12:
+                    self.filterDate1_month.setText('12')
+                if len(self.filterDate1_month.text()) < 2:
+                    self.filterDate2_month.setText('0'+self.filterDate1_month.text())
+                Dateot[1]=self.filterDate1_month.text()
+
+            if (self.filterDate1_day.text() != ''):
+                if int(self.filterDate1_day.text()) < 1:
+                    self.filterDate1_day.setText('01')
+
+                if int(self.filterDate1_age.text()) % 4 != 0:  # високосный ли год
+                    if int(self.filterDate1_day.text()) > 28 and self.filterDate1_month.text() == '02':
+                        self.filterDate1_day.setText('28')
+                else:
+                    if int(self.filterDate1_day.text()) > 29 and self.filterDate1_month.text() == '02':
+                        self.filterDate1_day.setText('29')
+
+                if int(self.filterDate1_day.text()) > 30:
+                    if self.filterDate1_month.text() == '04' or self.filterDate1_month.text() == '06' or self.filterDate1_month.text() == '09' or self.filterDate1_month.text() == '11':
+                        self.filterDate1_day.setText('30')
+                    else:
+                        if int(self.filterDate1_day.text()) > 31 and self.filterDate1_month.text() != '02':
+                            self.filterDate1_day.setText('31')
+                Dateot[2] = self.filterDate1_day.text()
+
+            DateOT=Dateot[0]+'-'+Dateot[1]+'-'+Dateot[2]
+            DateDO = Datedo[0] + '-' + Datedo[1] + '-' + Datedo[2]
+            print(DateOT+'\t:\t'+DateDO)
+
 
             if (self.filterq1.text()!= ''):
                 filt3='quotation>='+self.filterq1.text()
