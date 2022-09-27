@@ -1,7 +1,7 @@
 from PyQt6 import uic, QtCore, QtWidgets
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt6.QtSql import *
-from PyQt6.QtGui import QIntValidator
+from PyQt6.QtGui import QIntValidator, QDoubleValidator
 import sqlite3
 import os
 
@@ -26,8 +26,8 @@ class MainWindow(QMainWindow):
         self.filterDate2_age.setValidator(QIntValidator())
         self.filterDate2_month.setValidator(QIntValidator())
         self.filterDate2_day.setValidator(QIntValidator())
-        self.filterq1.setValidator(QIntValidator())
-        self.filterq2.setValidator(QIntValidator())
+        self.filterq1.setValidator(QDoubleValidator())
+        self.filterq2.setValidator(QDoubleValidator())
         RB0=QtWidgets.QRadioButton()
         RBmass=(self.RB1, self.RB2, self.RB3, self.RB4, self.RB5, self.RB6, self.RB7, self.RB8)
         for RB in RBmass:
@@ -177,11 +177,11 @@ class MainWindow(QMainWindow):
             self.filter=self.filter+"torg_date_2>='"+DateOT+"' AND torg_date_2<='"+DateDO+"'"
 
             if (self.filterq1.text()!= ''):
-                filt3='quotation>='+self.filterq1.text()
+                filt3='CAST(quotation as real)>='+self.filterq1.text()
                 self.filter = self.filter + ' AND ' + filt3
 
             if (self.filterq2.text() != ''):
-                filt4='quotation<='+self.filterq2.text()
+                filt4='CAST(quotation as real)<='+self.filterq2.text()
                 self.filter = self.filter + ' AND ' + filt4
 
             if (self.KodBox.currentText() != ''):
