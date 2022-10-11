@@ -20,6 +20,9 @@ class MainWindow(QMainWindow):
         self.BrowBut.clicked.connect(self.browsefiles)
         self.filterBut.clicked.connect(self.filter_use)
         self.tableDB.setSortingEnabled(True)
+        self.Error.setVisible(False)
+
+
         self.filterDate1_age.setValidator(QIntValidator())
         self.filterDate1_month.setValidator(QIntValidator())
         self.filterDate1_day.setValidator(QIntValidator())
@@ -28,10 +31,44 @@ class MainWindow(QMainWindow):
         self.filterDate2_day.setValidator(QIntValidator())
         self.filterq1.setValidator(QDoubleValidator())
         self.filterq2.setValidator(QDoubleValidator())
-        RB0=QtWidgets.QRadioButton()
+        self.filterDate1_month.setEnabled(False)
+        self.filterDate1_day.setEnabled(False)
+        self.filterDate2_month.setEnabled(False)
+        self.filterDate2_day.setEnabled(False)
+        self.filterDate1_age.textChanged.connect(self.Enable_line)
+        self.filterDate2_age.textChanged.connect(self.Enable_line)
+        self.filterDate1_month.textChanged.connect(self.Enable_line)
+        self.filterDate2_month.textChanged.connect(self.Enable_line)
+
+
         RBmass=(self.RB1, self.RB2, self.RB3, self.RB4, self.RB5, self.RB6, self.RB7, self.RB8)
         for RB in RBmass:
             RB.setVisible(False)
+
+    def Enable_line(self):
+        if self.filterDate1_age.text()!='':
+            self.filterDate1_month.setEnabled(True)
+        else:
+            self.filterDate1_month.setEnabled(False)
+            self.filterDate1_month.setText('')
+
+        if self.filterDate2_age.text()!='':
+            self.filterDate2_month.setEnabled(True)
+        else:
+            self.filterDate2_month.setEnabled(False)
+            self.filterDate2_month.setText('')
+
+        if self.filterDate1_month.text()!='':
+            self.filterDate1_day.setEnabled(True)
+        else:
+            self.filterDate1_day.setEnabled(False)
+            self.filterDate1_day.setText('')
+
+        if self.filterDate2_month.text()!='':
+            self.filterDate2_day.setEnabled(True)
+        else:
+            self.filterDate2_day.setEnabled(False)
+            self.filterDate2_day.setText('')
 
     def browsefiles(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file', '..\DataBase\ ', '(*.db)')
@@ -78,13 +115,18 @@ class MainWindow(QMainWindow):
             con.close()
 
     def loadtable(self):
-        table = QSqlTableModel()
-        table.setTable(self.Name_table)
-        table.setFilter(self.filter)
-        print('Filter: ' + table.filter())
-        table.select()
-        print('table - ' + table.tableName())
-        self.tableDB.setModel(table)
+        self.db.open()
+        model=QSqlQueryModel()
+        sqlzap = "SELECT * FROM "+self.Name_table
+        if self.Name_table == "F_usd":
+            sqlzap="SELECT torg_date, kod, quotation, num_contr FROM F_usd"
+        if self.Name_table == "dataisp":
+            sqlzap="SELECT * FROM dataisp"
+        if self.filter!='':
+            sqlzap = sqlzap+" WHERE "+self.filter
+        print(sqlzap)
+        model.setQuery(sqlzap)
+        self.tableDB.setModel(model)
         self.connectDB = True
 
 
@@ -170,26 +212,43 @@ class MainWindow(QMainWindow):
                 if len(self.filterDate1_day.text()) < 2:
                     self.filterDate1_day.setText('0' + self.filterDate1_day.text())
                 Dateot[2] = self.filterDate1_day.text()
+            flag_coret=True
+            print(Dateot[0]+">"+Datedo[0])
+            if int(Dateot[0]) > int(Datedo[0]):
+                flag_coret = False
+            elif int(Dateot[0]) == int(Datedo[0]):
+                if int(Dateot[1]) > int(Datedo[1]):
+                    flag_coret = False
+                elif int(Dateot[1]) == int(Datedo[1]):
+                    if int(Dateot[2]) > int(Datedo[2]):
+                        flag_coret = False
 
-            DateOT=Dateot[0]+'.'+Dateot[1]+'.'+Dateot[2]
-            DateDO = Datedo[0] + '.' + Datedo[1] + '.' + Datedo[2]
-            print(DateOT+'\t:\t'+DateDO)
-            self.filter=self.filter+"torg_date_2>='"+DateOT+"' AND torg_date_2<='"+DateDO+"'"
+            if flag_coret:
+                self.Error.setVisible(False)
+                self.Error.setText('')
+                DateOT = Dateot[0] + '.' + Dateot[1] + '.' + Dateot[2]
+                DateDO = Datedo[0] + '.' + Datedo[1] + '.' + Datedo[2]
+                print(DateOT + '\t:\t' + DateDO)
+                self.filter = self.filter + "torg_date_2>='" + DateOT + "' AND torg_date_2<='" + DateDO + "'"
 
-            if (self.filterq1.text()!= ''):
-                filt3='CAST(quotation as real)>='+self.filterq1.text()
-                self.filter = self.filter + ' AND ' + filt3
+                if (self.filterq1.text() != ''):
+                    filt3 = 'CAST(quotation as real)>=' + self.filterq1.text()
+                    self.filter = self.filter + ' AND ' + filt3
 
-            if (self.filterq2.text() != ''):
-                filt4='CAST(quotation as real)<='+self.filterq2.text()
-                self.filter = self.filter + ' AND ' + filt4
+                if (self.filterq2.text() != ''):
+                    filt4 = 'CAST(quotation as real)<=' + self.filterq2.text()
+                    self.filter = self.filter + ' AND ' + filt4
 
-            if (self.KodBox.currentText() != ''):
-                filt5="kod = '"+self.KodBox.currentText()+"'"
-                self.filter = self.filter + ' AND ' + filt5
+                if (self.KodBox.currentText() != ''):
+                    filt5 = "kod = '" + self.KodBox.currentText() + "'"
+                    self.filter = self.filter + ' AND ' + filt5
 
-            print(self.filter)
-            self.loadtable()
+                print(self.filter)
+                self.loadtable()
+            else:
+                self.Error.setVisible(True)
+                self.Error.setText('Некоректно выбран диапазон дат')
+
         else:
             self.OutButTable_2.setText('Загрузите БД')
             EmptyTab=QSqlTableModel()
@@ -201,8 +260,8 @@ def application():
     window=MainWindow()
     widget=QtWidgets.QStackedWidget()
     widget.addWidget(window)
-    widget.setMinimumWidth(840)
-    widget.setMinimumHeight(660)
+    widget.setMinimumWidth(1050)
+    widget.setMinimumHeight(630)
     widget.show()
     app.exec()
 
