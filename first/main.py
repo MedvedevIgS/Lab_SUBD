@@ -7,11 +7,69 @@ import os
 
 import sys
 
+class addWindow(QMainWindow):
+    Name_table = ''
+    browDB = ''
+    def __init__(self):
+        super(addWindow, self).__init__()
+        uic.loadUi("AddForm.ui", self)
+        self.Error.setVisible(False)
+        self.quo.setValidator(QDoubleValidator())
+        self.num_c.setValidator(QIntValidator())
+        self.addBut.clicked.connect(self.click_add)
+
+    def seter(self, brow):
+        self.browDB = brow
+
+    def click_add(self):
+        if self.quo.text()=='' or self.kod.text()=='' or self.torgd.text()=='' or self.num_c.text()=='':
+            self.Error.setVisible(True)
+            self.Error.setText('Заполните все поля')
+        else:
+            provDat=self.torgd.text().split('.')
+
+            provKod=self.kod.text().split('_')
+
+            if len(provDat)!=3 or len(provDat[0])!=2 or len(provDat[1])!=2 or len(provDat[2])!=4 or provDat[0].isdigit()!=True or provDat[1].isdigit()!=True or provDat[2].isdigit()!=True:
+                self.Error.setVisible(True)
+                self.Error.setText('Некорекктная запись даты')
+            elif len(provKod)!=3 or provKod[0]!='FUSD':
+                self.Error.setVisible(True)
+                self.Error.setText('Некорекктная запись кода')
+            else:
+                torgdatRevers = provDat[2] + '.' + provDat[1] + '.' + provDat[0]
+                self.Error.setVisible(False)
+                self.Error.setText('')
+                con = sqlite3.connect(self.browDB)
+                cur = con.cursor()
+                sql = "INSERT INTO F_usd VALUES ("
+                sql = sql+"'" + self.torgd.text() + "', '" + self.kod.text() + "', '" + self.quo.text() + "', " + self.num_c.text() + ", '" + torgdatRevers + "')"
+                print(sql)
+                cur.execute(sql)
+                print('execute')
+                cur.close()
+                con.close()
+                print('Внес измен')
+                self.Error.setVisible(True)
+                self.Error.setText('Запись добавлена')
+                self.quo.setText('')
+                self.kod.setText('')
+                self.torgd.setText('')
+                self.num_c.setText('')
+
+
+
+
+
+
+
+
 class MainWindow(QMainWindow):
     db=QSqlDatabase.addDatabase('QSQLITE')
     connectDB=False
     filter = ''
     Name_table=''
+    browDB=''
     def __init__(self):
         super(MainWindow,self).__init__()
         uic.loadUi("FormApp.ui",self)
@@ -21,6 +79,8 @@ class MainWindow(QMainWindow):
         self.filterBut.clicked.connect(self.filter_use)
         self.tableDB.setSortingEnabled(True)
         self.Error.setVisible(False)
+        self.AddBut.clicked.connect(self.addinBD)
+
 
 
         self.filterDate1_age.setValidator(QIntValidator())
@@ -44,6 +104,28 @@ class MainWindow(QMainWindow):
         RBmass=(self.RB1, self.RB2, self.RB3, self.RB4, self.RB5, self.RB6, self.RB7, self.RB8)
         for RB in RBmass:
             RB.setVisible(False)
+
+    def addinBD(self):
+        if self.connectDB:
+            print('ок')
+            self.Error.setVisible(False)
+            self.Error.setText('')
+            print('ок2')
+            global widget2
+            print('ок3')
+            addWind = addWindow()
+            print('ок4')
+            addWind.seter(self.browDB)
+            print('ок')
+            widget2 = QtWidgets.QStackedWidget()
+            widget2.addWidget(addWind)
+            widget2.setMinimumWidth(565)
+            widget2.setMinimumHeight(299)
+            widget2.show()
+        else:
+            self.Error.setVisible(True)
+            self.Error.setText('Для добавления записи нужно подключить БД')
+
 
     def Enable_line(self):
         if self.filterDate1_age.text()!='':
@@ -77,12 +159,15 @@ class MainWindow(QMainWindow):
     def LoadDB(self):
         if self.BrowLine.text() != '':
             if os.path.isfile(self.BrowLine.text()):
+                self.browDB=self.BrowLine.text()
                 self.loadButDB_1.setText('')
-                self.db.setDatabaseName(self.BrowLine.text())
-                con = sqlite3.connect(self.BrowLine.text())
+                self.db.setDatabaseName(self.browDB)
+                con = sqlite3.connect(self.browDB)
                 cur = con.cursor()
                 sql = "SELECT name FROM sqlite_master WHERE TYPE = 'table'"
                 Ntabl = cur.execute(sql).fetchall()
+                cur.close()
+                con.close()
                 print(len(Ntabl))
                 print(Ntabl[1][0])
                 RBmass=(self.RB1, self.RB2, self.RB3, self.RB4, self.RB5, self.RB6, self.RB7, self.RB8)
@@ -100,6 +185,7 @@ class MainWindow(QMainWindow):
     def RB_z(self):
         rb = self.sender()
         if rb.isChecked():
+            self.filter=''
             self.Name_table = rb.text()
             con = sqlite3.connect(self.BrowLine.text())
             cur = con.cursor()
@@ -135,119 +221,114 @@ class MainWindow(QMainWindow):
         if self.connectDB:
             self.OutButTable_2.setText('')
             self.filter=''
-            filter_check = False
-            Dateot=['1900','01','01']
-            Datedo=['2022','12','31']
-            if (self.filterDate2_age.text() != ''):
-                if int(self.filterDate2_age.text())<1000 or len(self.filterDate2_age.text())<4:
-                    self.filterDate2_age.setText('1000')
-                Datedo[0]=self.filterDate2_age.text()
+            if self.Name_table=='F_usd':
+                Dateot = ['1900', '01', '01']
+                Datedo = ['2022', '12', '31']
+                if (self.filterDate2_age.text() != ''):
+                    if int(self.filterDate2_age.text()) < 1000 or len(self.filterDate2_age.text()) < 4:
+                        self.filterDate2_age.setText('1000')
+                    Datedo[0] = self.filterDate2_age.text()
 
-            if (self.filterDate2_month.text() != ''):
-                if int(self.filterDate2_month.text()) < 1:
-                    self.filterDate2_month.setText('01')
-                if int(self.filterDate2_month.text()) > 12:
-                    self.filterDate2_month.setText('12')
-                if len(self.filterDate2_month.text()) < 2:
-                    self.filterDate2_month.setText('0'+self.filterDate2_month.text())
-                Datedo[1]=self.filterDate2_month.text()
+                if (self.filterDate2_month.text() != ''):
+                    if int(self.filterDate2_month.text()) < 1:
+                        self.filterDate2_month.setText('01')
+                    if int(self.filterDate2_month.text()) > 12:
+                        self.filterDate2_month.setText('12')
+                    if len(self.filterDate2_month.text()) < 2:
+                        self.filterDate2_month.setText('0' + self.filterDate2_month.text())
+                    Datedo[1] = self.filterDate2_month.text()
 
+                if (self.filterDate2_day.text() != ''):
+                    if int(self.filterDate2_day.text()) < 1:
+                        self.filterDate2_day.setText('01')
 
-
-            if (self.filterDate2_day.text() != ''):
-                if int(self.filterDate2_day.text()) < 1:
-                    self.filterDate2_day.setText('01')
-
-
-                if int(Datedo[0])%4!=0:                                # високосный ли год
-                    if int(self.filterDate2_day.text()) > 28 and self.filterDate2_month.text()=='02':
-                        self.filterDate2_day.setText('28')
-                else:
-                    if int(self.filterDate2_day.text()) > 29 and self.filterDate2_month.text() == '02':
-                        self.filterDate2_day.setText('29')
-
-
-                if int(self.filterDate2_day.text()) > 30:
-                    if self.filterDate2_month.text() == '04' or self.filterDate2_month.text() == '06' or self.filterDate2_month.text() == '09' or self.filterDate2_month.text() == '11':
-                        self.filterDate2_day.setText('30')
+                    if int(Datedo[0]) % 4 != 0:  # високосный ли год
+                        if int(self.filterDate2_day.text()) > 28 and self.filterDate2_month.text() == '02':
+                            self.filterDate2_day.setText('28')
                     else:
-                        if int(self.filterDate2_day.text()) > 31 and self.filterDate2_month.text()!='02':
-                            self.filterDate2_day.setText('31')
-                if len(self.filterDate2_day.text()) < 2:
-                    self.filterDate2_day.setText('0' + self.filterDate2_day.text())
-                Datedo[2]=self.filterDate2_day.text()
+                        if int(self.filterDate2_day.text()) > 29 and self.filterDate2_month.text() == '02':
+                            self.filterDate2_day.setText('29')
 
+                    if int(self.filterDate2_day.text()) > 30:
+                        if self.filterDate2_month.text() == '04' or self.filterDate2_month.text() == '06' or self.filterDate2_month.text() == '09' or self.filterDate2_month.text() == '11':
+                            self.filterDate2_day.setText('30')
+                        else:
+                            if int(self.filterDate2_day.text()) > 31 and self.filterDate2_month.text() != '02':
+                                self.filterDate2_day.setText('31')
+                    if len(self.filterDate2_day.text()) < 2:
+                        self.filterDate2_day.setText('0' + self.filterDate2_day.text())
+                    Datedo[2] = self.filterDate2_day.text()
 
-            if (self.filterDate1_age.text() != ''):
-                if int(self.filterDate1_age.text())<1000 or len(self.filterDate1_age.text())<4:
-                    self.filterDate1_age.setText('1000')
-                Dateot[0]=self.filterDate1_age.text()
+                if (self.filterDate1_age.text() != ''):
+                    if int(self.filterDate1_age.text()) < 1000 or len(self.filterDate1_age.text()) < 4:
+                        self.filterDate1_age.setText('1000')
+                    Dateot[0] = self.filterDate1_age.text()
 
-            if (self.filterDate1_month.text() != ''):
-                if int(self.filterDate1_month.text()) < 1:
-                    self.filterDate1_month.setText('01')
-                if int(self.filterDate1_month.text()) > 12:
-                    self.filterDate1_month.setText('12')
-                if len(self.filterDate1_month.text()) < 2:
-                    self.filterDate1_month.setText('0'+self.filterDate1_month.text())
-                Dateot[1]=self.filterDate1_month.text()
+                if (self.filterDate1_month.text() != ''):
+                    if int(self.filterDate1_month.text()) < 1:
+                        self.filterDate1_month.setText('01')
+                    if int(self.filterDate1_month.text()) > 12:
+                        self.filterDate1_month.setText('12')
+                    if len(self.filterDate1_month.text()) < 2:
+                        self.filterDate1_month.setText('0' + self.filterDate1_month.text())
+                    Dateot[1] = self.filterDate1_month.text()
 
-            if (self.filterDate1_day.text() != ''):
-                if int(self.filterDate1_day.text()) < 1:
-                    self.filterDate1_day.setText('01')
+                if (self.filterDate1_day.text() != ''):
+                    if int(self.filterDate1_day.text()) < 1:
+                        self.filterDate1_day.setText('01')
 
-                if int(Dateot[0])% 4 != 0:  # високосный ли год
-                    if int(self.filterDate1_day.text()) > 28 and self.filterDate1_month.text() == '02':
-                        self.filterDate1_day.setText('28')
-                else:
-                    if int(self.filterDate1_day.text()) > 29 and self.filterDate1_month.text() == '02':
-                        self.filterDate1_day.setText('29')
-
-                if int(self.filterDate1_day.text()) > 30:
-                    if self.filterDate1_month.text() == '04' or self.filterDate1_month.text() == '06' or self.filterDate1_month.text() == '09' or self.filterDate1_month.text() == '11':
-                        self.filterDate1_day.setText('30')
+                    if int(Dateot[0]) % 4 != 0:  # високосный ли год
+                        if int(self.filterDate1_day.text()) > 28 and self.filterDate1_month.text() == '02':
+                            self.filterDate1_day.setText('28')
                     else:
-                        if int(self.filterDate1_day.text()) > 31 and self.filterDate1_month.text() != '02':
-                            self.filterDate1_day.setText('31')
-                if len(self.filterDate1_day.text()) < 2:
-                    self.filterDate1_day.setText('0' + self.filterDate1_day.text())
-                Dateot[2] = self.filterDate1_day.text()
-            flag_coret=True
-            print(Dateot[0]+">"+Datedo[0])
-            if int(Dateot[0]) > int(Datedo[0]):
-                flag_coret = False
-            elif int(Dateot[0]) == int(Datedo[0]):
-                if int(Dateot[1]) > int(Datedo[1]):
+                        if int(self.filterDate1_day.text()) > 29 and self.filterDate1_month.text() == '02':
+                            self.filterDate1_day.setText('29')
+
+                    if int(self.filterDate1_day.text()) > 30:
+                        if self.filterDate1_month.text() == '04' or self.filterDate1_month.text() == '06' or self.filterDate1_month.text() == '09' or self.filterDate1_month.text() == '11':
+                            self.filterDate1_day.setText('30')
+                        else:
+                            if int(self.filterDate1_day.text()) > 31 and self.filterDate1_month.text() != '02':
+                                self.filterDate1_day.setText('31')
+                    if len(self.filterDate1_day.text()) < 2:
+                        self.filterDate1_day.setText('0' + self.filterDate1_day.text())
+                    Dateot[2] = self.filterDate1_day.text()
+                flag_coret = True
+                print(Dateot[0] + ">" + Datedo[0])
+                if int(Dateot[0]) > int(Datedo[0]):
                     flag_coret = False
-                elif int(Dateot[1]) == int(Datedo[1]):
-                    if int(Dateot[2]) > int(Datedo[2]):
+                elif int(Dateot[0]) == int(Datedo[0]):
+                    if int(Dateot[1]) > int(Datedo[1]):
                         flag_coret = False
+                    elif int(Dateot[1]) == int(Datedo[1]):
+                        if int(Dateot[2]) > int(Datedo[2]):
+                            flag_coret = False
 
-            if flag_coret:
-                self.Error.setVisible(False)
-                self.Error.setText('')
-                DateOT = Dateot[0] + '.' + Dateot[1] + '.' + Dateot[2]
-                DateDO = Datedo[0] + '.' + Datedo[1] + '.' + Datedo[2]
-                print(DateOT + '\t:\t' + DateDO)
-                self.filter = self.filter + "torg_date_2>='" + DateOT + "' AND torg_date_2<='" + DateDO + "'"
+                if flag_coret:
+                    self.Error.setVisible(False)
+                    self.Error.setText('')
+                    DateOT = Dateot[0] + '.' + Dateot[1] + '.' + Dateot[2]
+                    DateDO = Datedo[0] + '.' + Datedo[1] + '.' + Datedo[2]
+                    print(DateOT + '\t:\t' + DateDO)
+                    self.filter = self.filter + "torg_date_2>='" + DateOT + "' AND torg_date_2<='" + DateDO + "'"
 
-                if (self.filterq1.text() != ''):
-                    filt3 = 'CAST(quotation as real)>=' + self.filterq1.text()
-                    self.filter = self.filter + ' AND ' + filt3
+                    if (self.filterq1.text() != ''):
+                        filt3 = 'CAST(quotation as real)>=' + self.filterq1.text()
+                        self.filter = self.filter + ' AND ' + filt3
 
-                if (self.filterq2.text() != ''):
-                    filt4 = 'CAST(quotation as real)<=' + self.filterq2.text()
-                    self.filter = self.filter + ' AND ' + filt4
+                    if (self.filterq2.text() != ''):
+                        filt4 = 'CAST(quotation as real)<=' + self.filterq2.text()
+                        self.filter = self.filter + ' AND ' + filt4
 
-                if (self.KodBox.currentText() != ''):
-                    filt5 = "kod = '" + self.KodBox.currentText() + "'"
-                    self.filter = self.filter + ' AND ' + filt5
+                    if (self.KodBox.currentText() != ''):
+                        filt5 = "kod = '" + self.KodBox.currentText() + "'"
+                        self.filter = self.filter + ' AND ' + filt5
 
-                print(self.filter)
-                self.loadtable()
-            else:
-                self.Error.setVisible(True)
-                self.Error.setText('Некоректно выбран диапазон дат')
+                    print(self.filter)
+                    self.loadtable()
+                else:
+                    self.Error.setVisible(True)
+                    self.Error.setText('Некоректно выбран диапазон дат')
 
         else:
             self.OutButTable_2.setText('Загрузите БД')
