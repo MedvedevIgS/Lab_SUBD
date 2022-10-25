@@ -10,16 +10,19 @@ import sys
 class addWindow(QMainWindow):
     Name_table = ''
     browDB = ''
-    def __init__(self):
+    table=QSqlTableModel()
+    sqlloadtable=''
+    def __init__(self, tablesql: QSqlTableModel, nameT, BROWDB, sqltabload):
         super(addWindow, self).__init__()
+        self.table = tablesql
+        self.Name_table=nameT
+        self.browDB=BROWDB
+        self.sqlloadtable=sqltabload
         uic.loadUi("AddForm.ui", self)
         self.Error.setVisible(False)
         self.quo.setValidator(QDoubleValidator())
         self.num_c.setValidator(QIntValidator())
         self.addBut.clicked.connect(self.click_add)
-
-    def seter(self, brow):
-        self.browDB = brow
 
     def click_add(self):
         if self.quo.text()=='' or self.kod.text()=='' or self.torgd.text()=='' or self.num_c.text()=='':
@@ -33,23 +36,20 @@ class addWindow(QMainWindow):
             if len(provDat)!=3 or len(provDat[0])!=2 or len(provDat[1])!=2 or len(provDat[2])!=4 or provDat[0].isdigit()!=True or provDat[1].isdigit()!=True or provDat[2].isdigit()!=True:
                 self.Error.setVisible(True)
                 self.Error.setText('Некорекктная запись даты')
-            elif len(provKod)!=3 or provKod[0]!='FUSD':
+            elif len(provKod)!=3 or provKod[0]!='FUSD' or len(provKod[1])!=2 or len(provKod[2])!=2 or provKod[1].isdigit()!=True or provKod[2].isdigit()!=True:
                 self.Error.setVisible(True)
                 self.Error.setText('Некорекктная запись кода')
             else:
                 torgdatRevers = provDat[2] + '.' + provDat[1] + '.' + provDat[0]
                 self.Error.setVisible(False)
                 self.Error.setText('')
-                con = sqlite3.connect(self.browDB)
-                cur = con.cursor()
-                sql = "INSERT INTO F_usd VALUES ("
-                sql = sql+"'" + self.torgd.text() + "', '" + self.kod.text() + "', '" + self.quo.text() + "', " + self.num_c.text() + ", '" + torgdatRevers + "')"
-                print(sql)
-                cur.execute(sql)
-                print('execute')
-                cur.close()
-                con.close()
-                print('Внес измен')
+                sql = "INSERT INTO F_usd VALUES ('" + self.torgd.text() + "', '" + self.kod.text() + "', '" + self.quo.text() + "', " + self.num_c.text() + ", '" + torgdatRevers + "')"
+                qry=QSqlQuery()
+                qry.prepare(sql)
+                qry.exec()
+                sql = QSqlQuery(self.sqlloadtable)
+                self.table.setQuery(sql)
+                self.table.select()
                 self.Error.setVisible(True)
                 self.Error.setText('Запись добавлена')
                 self.quo.setText('')
@@ -62,14 +62,14 @@ class addWindow(QMainWindow):
 
 
 
-
-
 class MainWindow(QMainWindow):
     db=QSqlDatabase.addDatabase('QSQLITE')
     connectDB=False
     filter = ''
     Name_table=''
     browDB=''
+    model = QSqlTableModel()
+    sqltabload=''
     def __init__(self):
         super(MainWindow,self).__init__()
         uic.loadUi("FormApp.ui",self)
@@ -79,8 +79,9 @@ class MainWindow(QMainWindow):
         self.filterBut.clicked.connect(self.filter_use)
         self.tableDB.setSortingEnabled(True)
         self.Error.setVisible(False)
+        self.ErrorBUT.setVisible(False)
         self.AddBut.clicked.connect(self.addinBD)
-
+        self.DelBut.clicked.connect(self.delinBD)
 
 
         self.filterDate1_age.setValidator(QIntValidator())
@@ -105,18 +106,40 @@ class MainWindow(QMainWindow):
         for RB in RBmass:
             RB.setVisible(False)
 
+    def prints(self):
+        print(1)
+    def delinBD(self):
+        #print('++++++++++++++++++++++++++++')
+        select1 = self.tableDB.selectedIndexes()
+        #print(select1)
+        #print(len(select1))
+        if len(select1)>=2:
+            self.ErrorBUT.setText('')
+            self.ErrorBUT.setVisible(False)
+            #print('-----------------')
+            for i in range(len(select1)):
+                if i%4==0:
+                    ind0 = self.tableDB.model().index(select1[i].row(), 0, select1[i].parent())
+                    ind1 = self.tableDB.model().index(select1[i+1].row(), 1, select1[i+1].parent())
+                    #print(ind0.data())
+                    #print(ind1.data())
+                    #print('-----------------')
+                    sql = "DELETE FROM F_usd WHERE torg_date = '" + ind0.data() + "' AND kod = '" + ind1.data()+"'"
+                    #print(sql)
+                    qry = QSqlQuery()
+                    qry.prepare(sql)
+                    qry.exec()
+            self.loadtable()
+        else:
+            self.ErrorBUT.setText('Выделите всю строку')
+            self.ErrorBUT.setVisible(True)
+
     def addinBD(self):
         if self.connectDB:
-            print('ок')
             self.Error.setVisible(False)
             self.Error.setText('')
-            print('ок2')
             global widget2
-            print('ок3')
-            addWind = addWindow()
-            print('ок4')
-            addWind.seter(self.browDB)
-            print('ок')
+            addWind = addWindow(self.model, self.Name_table, self.browDB, self.sqltabload)
             widget2 = QtWidgets.QStackedWidget()
             widget2.addWidget(addWind)
             widget2.setMinimumWidth(565)
@@ -162,14 +185,16 @@ class MainWindow(QMainWindow):
                 self.browDB=self.BrowLine.text()
                 self.loadButDB_1.setText('')
                 self.db.setDatabaseName(self.browDB)
+
+
                 con = sqlite3.connect(self.browDB)
                 cur = con.cursor()
                 sql = "SELECT name FROM sqlite_master WHERE TYPE = 'table'"
                 Ntabl = cur.execute(sql).fetchall()
                 cur.close()
                 con.close()
-                print(len(Ntabl))
-                print(Ntabl[1][0])
+
+
                 RBmass=(self.RB1, self.RB2, self.RB3, self.RB4, self.RB5, self.RB6, self.RB7, self.RB8)
                 for i in range(len(Ntabl)):
                     RBmass[i].setVisible(True)
@@ -187,37 +212,39 @@ class MainWindow(QMainWindow):
         if rb.isChecked():
             self.filter=''
             self.Name_table = rb.text()
+
+
             con = sqlite3.connect(self.BrowLine.text())
             cur = con.cursor()
             sql = "SELECT DISTINCT kod FROM F_USD"
             kod = cur.execute(sql).fetchall()
-            print(len(kod))
-            self.KodBox.addItem('')
-            for i in range(len(kod)):
-                print(kod[i][0])
-                self.KodBox.addItem(kod[i][0])
-            self.loadtable()
             cur.close()
             con.close()
 
+
+
+            self.KodBox.clear()
+            self.KodBox.addItem('')
+            for i in range(len(kod)):
+                self.KodBox.addItem(kod[i][0])
+            self.loadtable()
+
     def loadtable(self):
         self.db.open()
-        model=QSqlQueryModel()
-        sqlzap = "SELECT * FROM "+self.Name_table
+        self.sqltabload = "SELECT * FROM "+self.Name_table
         if self.Name_table == "F_usd":
-            sqlzap="SELECT torg_date, kod, quotation, num_contr FROM F_usd"
+            self.sqltabload="SELECT torg_date, kod, quotation, num_contr FROM F_usd"
         if self.Name_table == "dataisp":
-            sqlzap="SELECT * FROM dataisp"
+            self.sqltabload="SELECT kod, exec_date FROM dataisp"
         if self.filter!='':
-            sqlzap = sqlzap+" WHERE "+self.filter
-        print(sqlzap)
-        model.setQuery(sqlzap)
-        self.tableDB.setModel(model)
+            self.sqltabload = self.sqltabload+" WHERE "+self.filter
+        sql=QSqlQuery(self.sqltabload)
+        self.model.setQuery(sql)
+        self.tableDB.setModel(self.model)
         self.connectDB = True
 
 
     def filter_use(self):
-        print('клик')
         if self.connectDB:
             self.OutButTable_2.setText('')
             self.filter=''
@@ -294,7 +321,6 @@ class MainWindow(QMainWindow):
                         self.filterDate1_day.setText('0' + self.filterDate1_day.text())
                     Dateot[2] = self.filterDate1_day.text()
                 flag_coret = True
-                print(Dateot[0] + ">" + Datedo[0])
                 if int(Dateot[0]) > int(Datedo[0]):
                     flag_coret = False
                 elif int(Dateot[0]) == int(Datedo[0]):
@@ -309,7 +335,6 @@ class MainWindow(QMainWindow):
                     self.Error.setText('')
                     DateOT = Dateot[0] + '.' + Dateot[1] + '.' + Dateot[2]
                     DateDO = Datedo[0] + '.' + Datedo[1] + '.' + Datedo[2]
-                    print(DateOT + '\t:\t' + DateDO)
                     self.filter = self.filter + "torg_date_2>='" + DateOT + "' AND torg_date_2<='" + DateDO + "'"
 
                     if (self.filterq1.text() != ''):
@@ -324,7 +349,6 @@ class MainWindow(QMainWindow):
                         filt5 = "kod = '" + self.KodBox.currentText() + "'"
                         self.filter = self.filter + ' AND ' + filt5
 
-                    print(self.filter)
                     self.loadtable()
                 else:
                     self.Error.setVisible(True)
@@ -335,10 +359,9 @@ class MainWindow(QMainWindow):
             EmptyTab=QSqlTableModel()
             self.tableDB.setModel(EmptyTab)
 
-
 def application():
     app=QApplication(sys.argv)
-    window=MainWindow()
+    window = MainWindow()
     widget=QtWidgets.QStackedWidget()
     widget.addWidget(window)
     widget.setMinimumWidth(1050)
