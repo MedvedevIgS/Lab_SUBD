@@ -7,6 +7,65 @@ import os
 
 import sys
 
+class changWindow(QMainWindow):
+    Name_table = ''
+    browDB = ''
+    table = QSqlTableModel()
+    sqlloadtable = ''
+    inputDat=[]
+    def __init__(self, tablesql: QSqlTableModel, nameT, BROWDB, sqltabload, ind0, ind1, ind2, ind3):
+        super(changWindow, self).__init__()
+        self.table = tablesql
+        self.Name_table = nameT
+        self.browDB = BROWDB
+        self.sqlloadtable = sqltabload
+        self.inputDat=[str(ind0), str(ind1), str(ind2), str(ind3)]
+        uic.loadUi("ChangForm.ui", self)
+        self.Error.setVisible(False)
+        self.quo.setValidator(QDoubleValidator())
+        self.num_c.setValidator(QIntValidator())
+        self.torgd.setText(self.inputDat[0])
+        self.kod.setText(self.inputDat[1])
+        self.quo.setText(self.inputDat[2])
+        self.num_c.setText(self.inputDat[3])
+        self.changBut.clicked.connect(self.click_chang)
+
+    def click_chang(self):
+        if self.quo.text() == '' or self.kod.text() == '' or self.torgd.text() == '' or self.num_c.text() == '':
+            self.Error.setVisible(True)
+            self.Error.setText('Заполните все поля')
+        else:
+            provDat = self.torgd.text().split('.')
+
+            provKod = self.kod.text().split('_')
+
+            if len(provDat) != 3 or len(provDat[0]) != 2 or len(provDat[1]) != 2 or len(provDat[2]) != 4 or provDat[
+                0].isdigit() != True or provDat[1].isdigit() != True or provDat[2].isdigit() != True:
+                self.Error.setVisible(True)
+                self.Error.setText('Некорекктная запись даты')
+            elif len(provKod) != 3 or provKod[0] != 'FUSD' or len(provKod[1]) != 2 or len(provKod[2]) != 2 or \
+                    provKod[1].isdigit() != True or provKod[2].isdigit() != True:
+                self.Error.setVisible(True)
+                self.Error.setText('Некорекктная запись кода')
+            else:
+                torgdatRevers = provDat[2] + '.' + provDat[1] + '.' + provDat[0]
+                self.Error.setVisible(False)
+                self.Error.setText('')
+                #sql = "INSERT INTO F_usd VALUES ('" + self.torgd.text() + "', '" + self.kod.text() + "', '" + self.quo.text() + "', " + self.num_c.text() + ", '" + torgdatRevers + "')"
+                sql="UPDATE F_usd SET torg_date = '"+self.torgd.text()+"', kod = '"+self.kod.text()+"', quotation = '"+self.quo.text()+"', num_contr = "+self.num_c.text()+", torg_date_2 = '"+torgdatRevers+"' WHERE torg_date = '"+self.inputDat[0]+"' AND kod = '"+self.inputDat[1]+"' AND quotation = '"+self.inputDat[2]+"' AND num_contr = "+self.inputDat[3]
+                print(sql)
+                qry = QSqlQuery()
+                qry.prepare(sql)
+                qry.exec()
+                sql = QSqlQuery(self.sqlloadtable)
+                self.inputDat = [self.torgd.text(), self.kod.text(), self.quo.text(), self.num_c.text()]
+                self.table.setQuery(sql)
+                self.table.select()
+                self.Error.setVisible(True)
+                self.Error.setText('Изменения добавлены')
+
+
+
 class addWindow(QMainWindow):
     Name_table = ''
     browDB = ''
@@ -82,6 +141,7 @@ class MainWindow(QMainWindow):
         self.ErrorBUT.setVisible(False)
         self.AddBut.clicked.connect(self.addinBD)
         self.DelBut.clicked.connect(self.delinBD)
+        self.ChangBut.clicked.connect(self.chaninBD)
 
 
         self.filterDate1_age.setValidator(QIntValidator())
@@ -106,8 +166,34 @@ class MainWindow(QMainWindow):
         for RB in RBmass:
             RB.setVisible(False)
 
-    def prints(self):
-        print(1)
+    def chaninBD(self):
+        select1 = self.tableDB.selectedIndexes()
+        print(len(select1))
+        if len(select1) >= 4:
+            self.ErrorBUT.setText('')
+            self.ErrorBUT.setVisible(False)
+            if len(select1) == 4:
+                self.ErrorBUT.setText('')
+                self.ErrorBUT.setVisible(False)
+                ind0 = self.tableDB.model().index(select1[0].row(), 0, select1[0].parent())
+                ind1 = self.tableDB.model().index(select1[1].row(), 1, select1[1].parent())
+                ind2 = self.tableDB.model().index(select1[2].row(), 2, select1[2].parent())
+                ind3 = self.tableDB.model().index(select1[3].row(), 3, select1[3].parent())
+                global widget3
+                changWind = changWindow(self.model, self.Name_table, self.browDB, self.sqltabload, ind0.data(), ind1.data(), ind2.data(), ind3.data())
+                widget3 = QtWidgets.QStackedWidget()
+                widget3.addWidget(changWind)
+                widget3.setMinimumWidth(565)
+                widget3.setMinimumHeight(299)
+                widget3.show()
+            else:
+                self.ErrorBUT.setText('Выделите одну строку')
+                self.ErrorBUT.setVisible(True)
+
+        else:
+            self.ErrorBUT.setText('Выделите всю строку')
+            self.ErrorBUT.setVisible(True)
+
     def delinBD(self):
         #print('++++++++++++++++++++++++++++')
         select1 = self.tableDB.selectedIndexes()
@@ -123,9 +209,7 @@ class MainWindow(QMainWindow):
                     ind1 = self.tableDB.model().index(select1[i+1].row(), 1, select1[i+1].parent())
                     #print(ind0.data())
                     #print(ind1.data())
-                    #print('-----------------')
                     sql = "DELETE FROM F_usd WHERE torg_date = '" + ind0.data() + "' AND kod = '" + ind1.data()+"'"
-                    #print(sql)
                     qry = QSqlQuery()
                     qry.prepare(sql)
                     qry.exec()
