@@ -225,101 +225,6 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0.989, stop:0
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="formLayoutWidget">
-    <property name="geometry">
-     <rect>
-      <x>860</x>
-      <y>100</y>
-      <width>160</width>
-      <height>181</height>
-     </rect>
-    </property>
-    <layout class="QFormLayout" name="formLayout">
-     <property name="horizontalSpacing">
-      <number>5</number>
-     </property>
-     <property name="verticalSpacing">
-      <number>5</number>
-     </property>
-     <property name="leftMargin">
-      <number>5</number>
-     </property>
-     <property name="topMargin">
-      <number>5</number>
-     </property>
-     <property name="rightMargin">
-      <number>5</number>
-     </property>
-     <property name="bottomMargin">
-      <number>5</number>
-     </property>
-     <item row="0" column="0">
-      <widget class="QRadioButton" name="RB1">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="tabletTracking">
-        <bool>false</bool>
-       </property>
-       <property name="autoFillBackground">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QRadioButton" name="RB2">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QRadioButton" name="RB3">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QRadioButton" name="RB4">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QRadioButton" name="RB5">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="QRadioButton" name="RB6">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="0">
-      <widget class="QRadioButton" name="RB7">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="0">
-      <widget class="QRadioButton" name="RB8">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
    <widget class="QLineEdit" name="Error">
     <property name="geometry">
      <rect>
@@ -927,6 +832,32 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0.989, stop:0
     </property>
     <property name="readOnly">
      <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="RB2">
+    <property name="geometry">
+     <rect>
+      <x>860</x>
+      <y>120</y>
+      <width>82</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>dataisp</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="RB1">
+    <property name="geometry">
+     <rect>
+      <x>860</x>
+      <y>100</y>
+      <width>82</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>F_usd</string>
     </property>
    </widget>
   </widget>
