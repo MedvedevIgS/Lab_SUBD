@@ -1,5 +1,5 @@
 from PyQt6 import uic, QtCore, QtWidgets
-from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog
+from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
 from PyQt6.QtSql import *
 from PyQt6.QtGui import QIntValidator, QDoubleValidator
 import sqlite3
@@ -107,9 +107,8 @@ class addWindow(QMainWindow):
                         self.num_c.setText('')
 
                 else:
-                    error_kod=QMessageBox(parent=self, text="Hello World")
-                    error_kod.setInformativeText("Добавить код?")
-                    error_kod.setWindowTitle("Код не найден")
+                    error_kod=QMessageBox(parent=self, text="Добавить код в dataisp?")
+                    error_kod.setWindowTitle("Код не найден!")
                     error_kod.setStandardButtons(QMessageBox.StandardButton.Ok|QMessageBox.StandardButton.Cancel)
                     error_kod.buttonClicked.connect(self.but_action)
                     ret=error_kod.exec()
@@ -303,6 +302,9 @@ class MainWindow(QMainWindow):
                     qry = QSqlQuery()
                     qry.prepare(sql)
                     qry.exec()
+                    sql = "DELETE FROM F_usd WHERE kod = '" + ind0.data() + "'"
+                    qry.prepare(sql)
+                    qry.exec()
                     self.loadtable()
                     self.appdate_KodBox()
             else:
@@ -438,9 +440,10 @@ class MainWindow(QMainWindow):
     def loadtable(self):
         self.db.open()
         if self.Name_table == "F_usd":
-            self.sqltabload = """SELECT torg_date, kod, quotation, num_contr, round (CAST(quotation as REAL)/CAST(quo2 as REAL),4) xk
+            self.sqltabload = \
+            """SELECT torg_date, kod, quotation, num_contr, COALESCE(round (CAST(quotation as REAL)/CAST(quo2 as REAL),4), 0) xk
                FROM 
-               (SELECT torg_date, kod, quotation, num_contr, torg_date_2, COALESCE(quo2, quotation) quo2, COALESCE(kod2, kod) kod2, COALESCE(num2, num1) num2
+               (SELECT torg_date, kod, quotation, num_contr, torg_date_2, quo2, COALESCE(kod2, kod) kod2, num2
                  FROM
                  (SELECT *, row_number() over(PARTITION BY kod) num1 FROM F_usd) as T1
                  LEFT JOIN 
