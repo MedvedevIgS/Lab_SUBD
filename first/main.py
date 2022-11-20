@@ -4,6 +4,7 @@ from PyQt6.QtSql import *
 from PyQt6.QtGui import QIntValidator, QDoubleValidator
 import sqlite3
 import os
+import math
 
 import sys
 
@@ -38,6 +39,9 @@ class addWindow(QMainWindow):
             elif len(self.kod1.text())<2 or len(self.kod2.text())<2 or int(self.kod1.text())>12:
                     self.Error.setVisible(True)
                     self.Error.setText('Некорекктная запись кода')
+            elif int(self.quo.text())<=0:
+                self.Error.setVisible(True)
+                self.Error.setText('Цена должна быть больше 0')
             else:
                 flagkod = False
                 self.kod="FUSD_"+self.kod1.text()+"_"+self.kod2.text()
@@ -161,6 +165,9 @@ class changWindow(QMainWindow):
             elif len(provKod) != 3 or provKod[0] != 'FUSD' or len(provKod[1]) != 2 or len(provKod[2]) != 2 or provKod[1].isdigit() != True or provKod[2].isdigit() != True:
                 self.Error.setVisible(True)
                 self.Error.setText('Некорекктная запись кода')
+            elif int(self.quo.text())<=0:
+                self.Error.setVisible(True)
+                self.Error.setText('Цена должна быть больше 0')
             else:
                 torgdatRevers = provDat[2] + '.' + provDat[1] + '.' + provDat[0]
                 self.Error.setVisible(False)
@@ -189,6 +196,7 @@ class MainWindow(QMainWindow):
         self.sort_F_usd='torg_date_2'
         self.sort_dataisp = 'exec_date_2'
         self.db=QSqlDatabase.addDatabase('QSQLITE')
+        self.con=sqlite3.connect(self.browDB)
         uic.loadUi("FormApp.ui",self)
         self.setWindowTitle("LR_SUBD")
         self.loadButDB.clicked.connect(self.LoadDB)
@@ -200,6 +208,7 @@ class MainWindow(QMainWindow):
         self.AddBut.clicked.connect(self.addinBD)
         self.DelBut.clicked.connect(self.delinBD)
         self.ChangBut.clicked.connect(self.chaninBD)
+        self.tableDB.setEditTriggers(QtWidgets.QTableWidget.EditTrigger.NoEditTriggers)
 
 
         self.filterDate1_age.setValidator(QIntValidator())
@@ -378,12 +387,12 @@ class MainWindow(QMainWindow):
         if self.BrowLine.text() != '':
             if os.path.isfile(self.BrowLine.text()):
                 self.browDB=self.BrowLine.text()
-                con = sqlite3.connect(self.browDB)
-                cur = con.cursor()
+                self.con = sqlite3.connect(self.browDB)
+                cur = self.con.cursor()
+                self.con.create_function('log', 1, math.log10)
                 sql = "SELECT name FROM sqlite_master WHERE TYPE = 'table'"
                 Ntabl = cur.execute(sql).fetchall()
                 cur.close()
-                con.close()
                 print(Ntabl)
                 if Ntabl[1][0]=='F_usd' and Ntabl[0][0]=='dataisp' and len(Ntabl)==2:
                     self.loadButDB_1.setText('')
@@ -406,6 +415,7 @@ class MainWindow(QMainWindow):
                 self.RB2.setVisible(False)
                 rb = self.sender()
                 rb.setChecked(False)
+
         else:
             self.loadButDB_1.setText('Укажите Путь')
             self.connectDB = False
@@ -431,17 +441,17 @@ class MainWindow(QMainWindow):
 
 
     def getmasskod(self):
-        con = sqlite3.connect(self.BrowLine.text())
-        cur = con.cursor()
+        cur = self.con.cursor()
         sql = "SELECT DISTINCT kod FROM dataisp"
         kod = cur.execute(sql).fetchall()
+        cur.close()
         return kod
 
     def loadtable(self):
         self.db.open()
         if self.Name_table == "F_usd":
             self.sqltabload = \
-            """SELECT torg_date, kod, quotation, num_contr, COALESCE(round (CAST(quotation as REAL)/CAST(quo2 as REAL),4), 0) xk
+            """SELECT torg_date, kod, quotation, num_contr, (COALESCE(round (CAST(quotation as REAL)/CAST(quo2 as REAL),4), 1)) xk
                FROM 
                (SELECT torg_date, kod, quotation, num_contr, torg_date_2, quo2, COALESCE(kod2, kod) kod2, num2
                  FROM
@@ -450,7 +460,6 @@ class MainWindow(QMainWindow):
                  (SELECT quotation quo2, kod kod2, row_number() over(PARTITION BY kod) num2 FROM F_usd) as T2
                ON T1.num1-2=T2.num2 AND  T1.kod=T2.kod2
             """
-            #self.sqltabload = "SELECT torg_date, kod, quotation, num_contr FROM F_usd"
             if self.filter!='':
                 self.sqltabload+=" WHERE "+self.filter+")"
             else:
@@ -460,9 +469,26 @@ class MainWindow(QMainWindow):
             self.sqltabload = "SELECT kod, exec_date FROM dataisp"
             self.sqltabload += " ORDER BY " + self.sort_dataisp
         print(self.sqltabload)
-        sql = QSqlQuery(self.sqltabload)
-        self.model.setQuery(sql)
-        self.tableDB.setModel(self.model)
+        cur = self.con.cursor()
+        tab=cur.execute(self.sqltabload).fetchall()
+        print(tab[0])
+        Shead = list(description[0] for description in cur.description)
+        print(Shead)
+        self.tableDB.setColumnCount(len(Shead))
+        self.tableDB.setRowCount(len(tab))
+        self.tableDB.setHorizontalHeaderLabels(Shead)
+        print(len(tab))
+        tabrow=0
+        for row in tab:
+            print(row)
+            for i in range(len(row)):
+                if i==len(row)-1 and self.Name_table == "F_usd":
+                    self.tableDB.setItem(tabrow, i, QtWidgets.QTableWidgetItem(str(round(math.log10(row[i]),4))))
+                else:
+                    self.tableDB.setItem(tabrow, i, QtWidgets.QTableWidgetItem(str(row[i])))
+            tabrow+=1
+        cur.close()
+
 
     def filter_use(self):
         if self.connectDB:
