@@ -547,7 +547,7 @@ class MainWindow(QMainWindow):
     def loadtable_stat(self):
         self.db.open()
         if self.filterStat!='':
-            self.filterStat+="WHERE "+self.filterStat
+            self.filterStat="WHERE "+self.filterStat
         sqltabStat = \
         """
 SELECT kod, round(Xср1*10000, 5) Xср, round(DESP1*100000, 5) D, round((Xср1-Xср2)*1000000, 5) TEND_Xср, round((DESP1-DESP2)*10000000, 5) TEND_D
@@ -611,6 +611,7 @@ ON T1.kod=T2.kod
 GROUP BY T1.kod)
 GROUP BY kod)
         """
+        print(sqltabStat)
         cur = self.con.cursor()
         tab = cur.execute(sqltabStat).fetchall()
         Shead = list(description[0] for description in cur.description)
