@@ -8,6 +8,14 @@ import math
 
 import sys
 
+def power1(D, i):
+    return D**i
+def log_10(D):
+    return round(math.log10(float(D)),4)
+
+
+
+
 class addWindow(QMainWindow):
     def __init__(self, mainWin):
         super(addWindow, self).__init__()
@@ -100,6 +108,7 @@ class addWindow(QMainWindow):
                         qry.prepare(sql)
                         qry.exec()
                         self.MainWin.loadtable()
+                        self.MainWin.loadtable_stat()
                         self.Error.setVisible(True)
                         self.Error.setText('Запись добавлена')
                         self.quo.setText('')
@@ -177,6 +186,7 @@ class changWindow(QMainWindow):
                 qry.prepare(sql)
                 qry.exec()
                 self.MainWin.loadtable()
+                self.MainWin.loadtable_stat()
                 self.inputDat = [self.torgd.text(), self.kod.text(), self.quo.text(), self.num_c.text()]
                 self.Error.setVisible(True)
                 self.Error.setText('Изменения добавлены')
@@ -189,12 +199,12 @@ class MainWindow(QMainWindow):
         self.connectDB = False
         self.browDB=''
         self.kod=[]
-        self.EmptyTab = QSqlTableModel()
         self.filter = ''
+        self.filterStat = ''
         self.Name_table = ''
         self.model = QSqlTableModel()
         self.sort_F_usd='torg_date_2'
-        self.sort_dataisp = 'exec_date_2'
+        self.sort_dataisp = 'exec_data_2'
         self.db=QSqlDatabase.addDatabase('QSQLITE')
         self.con=sqlite3.connect(self.browDB)
         uic.loadUi("FormApp.ui",self)
@@ -202,13 +212,17 @@ class MainWindow(QMainWindow):
         self.loadButDB.clicked.connect(self.LoadDB)
         self.BrowBut.clicked.connect(self.browsefiles)
         self.filterBut.clicked.connect(self.filter_use)
+        self.filterBut_2.clicked.connect(self.filter_use_stat)
         self.tableDB.setSortingEnabled(True)
+        #self.tableStat.setSortingEnabled(True)
         self.Error.setVisible(False)
+        self.Error2.setVisible(False)
         self.ErrorBUT.setVisible(False)
         self.AddBut.clicked.connect(self.addinBD)
         self.DelBut.clicked.connect(self.delinBD)
         self.ChangBut.clicked.connect(self.chaninBD)
         self.tableDB.setEditTriggers(QtWidgets.QTableWidget.EditTrigger.NoEditTriggers)
+        self.tableStat.setEditTriggers(QtWidgets.QTableWidget.EditTrigger.NoEditTriggers)
 
 
         self.filterDate1_age.setValidator(QIntValidator())
@@ -217,16 +231,36 @@ class MainWindow(QMainWindow):
         self.filterDate2_age.setValidator(QIntValidator())
         self.filterDate2_month.setValidator(QIntValidator())
         self.filterDate2_day.setValidator(QIntValidator())
+
+        self.filterDate1_age_2.setValidator(QIntValidator())
+        self.filterDate1_month_2.setValidator(QIntValidator())
+        self.filterDate1_day_2.setValidator(QIntValidator())
+        self.filterDate2_age_2.setValidator(QIntValidator())
+        self.filterDate2_month_2.setValidator(QIntValidator())
+        self.filterDate2_day_2.setValidator(QIntValidator())
+
         self.filterq1.setValidator(QDoubleValidator())
         self.filterq2.setValidator(QDoubleValidator())
         self.filterDate1_month.setEnabled(False)
         self.filterDate1_day.setEnabled(False)
         self.filterDate2_month.setEnabled(False)
         self.filterDate2_day.setEnabled(False)
+
+        self.filterDate1_month_2.setEnabled(False)
+        self.filterDate1_day_2.setEnabled(False)
+        self.filterDate2_month_2.setEnabled(False)
+        self.filterDate2_day_2.setEnabled(False)
+
         self.filterDate1_age.textChanged.connect(self.Enable_line)
         self.filterDate2_age.textChanged.connect(self.Enable_line)
         self.filterDate1_month.textChanged.connect(self.Enable_line)
         self.filterDate2_month.textChanged.connect(self.Enable_line)
+
+        self.filterDate1_age_2.textChanged.connect(self.Enable_line)
+        self.filterDate2_age_2.textChanged.connect(self.Enable_line)
+        self.filterDate1_month_2.textChanged.connect(self.Enable_line)
+        self.filterDate2_month_2.textChanged.connect(self.Enable_line)
+
         self.RB1.setVisible(False)
         self.RB2.setVisible(False)
         self.RB1.toggled.connect(self.RB_z)
@@ -283,6 +317,7 @@ class MainWindow(QMainWindow):
                     qry.prepare(sql)
                     qry.exec()
                     self.loadtable()
+                    self.loadtable_stat()
             else:
                 self.ErrorBUT.setText('Выделите строки полностью')
                 self.ErrorBUT.setVisible(True)
@@ -319,8 +354,6 @@ class MainWindow(QMainWindow):
             else:
                 self.ErrorBUT.setText('Выделите строки полностью')
                 self.ErrorBUT.setVisible(True)
-
-
 
     def chaninBD(self):
         if self.Name_table=="F_usd":
@@ -377,6 +410,31 @@ class MainWindow(QMainWindow):
             self.filterDate2_day.setEnabled(False)
             self.filterDate2_day.setText('')
 
+        #---------------------------------------------------
+
+        if self.filterDate1_age_2.text()!='':
+            self.filterDate1_month_2.setEnabled(True)
+        else:
+            self.filterDate1_month_2.setEnabled(False)
+            self.filterDate1_month_2.setText('')
+
+        if self.filterDate2_age_2.text()!='':
+            self.filterDate2_month_2.setEnabled(True)
+        else:
+            self.filterDate2_month_2.setEnabled(False)
+            self.filterDate2_month_2.setText('')
+
+        if self.filterDate1_month_2.text()!='':
+            self.filterDate1_day_2.setEnabled(True)
+        else:
+            self.filterDate1_day_2.setEnabled(False)
+            self.filterDate1_day_2.setText('')
+
+        if self.filterDate2_month_2.text()!='':
+            self.filterDate2_day_2.setEnabled(True)
+        else:
+            self.filterDate2_day_2.setEnabled(False)
+            self.filterDate2_day_2.setText('')
 
     def browsefiles(self):
         fname = QFileDialog.getOpenFileName(self, 'Open file', '..\DataBase\ ', '(*.db)')
@@ -389,7 +447,8 @@ class MainWindow(QMainWindow):
                 self.browDB=self.BrowLine.text()
                 self.con = sqlite3.connect(self.browDB)
                 cur = self.con.cursor()
-                self.con.create_function('log', 1, math.log10)
+                self.con.create_function('log', 1, log_10)
+                self.con.create_function('POWER', 2, power1)
                 sql = "SELECT name FROM sqlite_master WHERE TYPE = 'table'"
                 Ntabl = cur.execute(sql).fetchall()
                 cur.close()
@@ -400,6 +459,7 @@ class MainWindow(QMainWindow):
                     self.RB1.setVisible(True)
                     self.RB2.setVisible(True)
                     self.connectDB = True
+                    self.loadtable_stat()
                     self.RB1.setChecked(True)
                 else:
                     self.loadButDB_1.setText('Некорректная БД')
@@ -439,7 +499,6 @@ class MainWindow(QMainWindow):
         for i in range(len(self.kod)):
             self.KodBox.addItem(self.kod[i][0])
 
-
     def getmasskod(self):
         cur = self.con.cursor()
         sql = "SELECT DISTINCT kod FROM dataisp"
@@ -451,7 +510,7 @@ class MainWindow(QMainWindow):
         self.db.open()
         if self.Name_table == "F_usd":
             self.sqltabload = \
-            """SELECT torg_date, kod, quotation, num_contr, (COALESCE(round (CAST(quotation as REAL)/CAST(quo2 as REAL),4), 1)) xk
+            """SELECT torg_date, kod, quotation, num_contr, LOG(COALESCE(round (CAST(quotation as REAL)/CAST(quo2 as REAL),4), 1)) xk
                FROM 
                (SELECT torg_date, kod, quotation, num_contr, torg_date_2, quo2, COALESCE(kod2, kod) kod2, num2
                  FROM
@@ -469,9 +528,9 @@ class MainWindow(QMainWindow):
             self.sqltabload = "SELECT kod, exec_date FROM dataisp"
             self.sqltabload += " ORDER BY " + self.sort_dataisp
         print(self.sqltabload)
+        self.tableDB.clear()
         cur = self.con.cursor()
         tab=cur.execute(self.sqltabload).fetchall()
-        print(tab[0])
         Shead = list(description[0] for description in cur.description)
         print(Shead)
         self.tableDB.setColumnCount(len(Shead))
@@ -480,14 +539,92 @@ class MainWindow(QMainWindow):
         print(len(tab))
         tabrow=0
         for row in tab:
-            print(row)
             for i in range(len(row)):
-                if i==len(row)-1 and self.Name_table == "F_usd":
-                    self.tableDB.setItem(tabrow, i, QtWidgets.QTableWidgetItem(str(round(math.log10(row[i]),4))))
-                else:
-                    self.tableDB.setItem(tabrow, i, QtWidgets.QTableWidgetItem(str(row[i])))
+                self.tableDB.setItem(tabrow, i, QtWidgets.QTableWidgetItem(str(row[i])))
             tabrow+=1
         cur.close()
+
+    def loadtable_stat(self):
+        self.db.open()
+        if self.filterStat!='':
+            self.filterStat+="WHERE "+self.filterStat
+        sqltabStat = \
+        """
+SELECT kod, round(Xср1*10000, 5) Xср_x100, round(DESP1*100000, 5) Dx1000, round((Xср1-Xср2)*1000000, 5) TEND_Xср, round((DESP1-DESP2)*10000000, 5) TEND_D
+FROM
+(SELECT torg_date_2, kod, Xср1, Xср2, AVG(x2_1) as DESP1, AVG(x2_2) as DESP2
+FROM
+(SELECT T1.torg_date_2, T1.kod, T1.xk1, T1.xk2, T2.Xср1, T2.Xср2, POWER(T1.xk1-T2.Xср1,2) as x2_1, POWER(T1.xk2-T2.Xср2,2) as x2_2
+FROM
+(SELECT T1.torg_date_2, T1.kod, T1.num1, T1.xk xk1, COALESCE(T2.xk, 0) xk2
+FROM
+(SELECT torg_date_2, kod, num1, LOG(COALESCE(CAST(quotation as REAL)/CAST(quotation2 as REAL), 1)) xk
+FROM
+(SELECT torg_date_2, T1.kod, T1.quotation, T2.quotation quotation2, num1, num2
+FROM (SELECT *, row_number() over(PARTITION BY kod) num1
+FROM (SELECT * FROM F_usd ORDER by torg_date_2)) AS T1
+LEFT JOIN
+(SELECT quotation, kod, row_number() over(PARTITION BY kod) num2
+FROM (SELECT * FROM F_usd ORDER by torg_date_2)) AS T2
+ON T1.kod=T2.kod AND T1.num1-2=T2.num2)"""+self.filterStat+""") AS T1
+LEFT JOIN
+(SELECT torg_date_2, kod, num1, LOG(COALESCE(CAST(quotation as REAL)/CAST(quotation2 as REAL), 1)) xk
+FROM
+(SELECT torg_date_2, T1.kod, T1.quotation, T2.quotation quotation2, num1, num2
+FROM (SELECT *, row_number() over(PARTITION BY kod) num1
+FROM (SELECT * FROM F_usd ORDER by torg_date_2)) AS T1
+LEFT JOIN
+(SELECT quotation, kod, row_number() over(PARTITION BY kod) num2
+FROM (SELECT * FROM F_usd ORDER by torg_date_2)) AS T2
+ON T1.kod=T2.kod AND T1.num1-2=T2.num2)
+"""+self.filterStat+""") AS T2
+ON T1.kod=T2.kod aND T1.num1-1=T2.num1) AS T1
+LEFT JOIN
+(SELECT *, round(AVG(xk1),7) as Xср1, AVG(xk2) as Xср2
+FROM
+(SELECT T1.torg_date_2, T1.kod, T1.num1, T1.xk xk1, T2.xk xk2
+FROM
+(SELECT torg_date_2, kod, num1, LOG(COALESCE(CAST(quotation as REAL)/CAST(quotation2 as REAL), 1)) xk
+FROM
+(SELECT torg_date_2, T1.kod, T1.quotation, T2.quotation quotation2, num1, num2
+FROM (SELECT *, row_number() over(PARTITION BY kod) num1
+FROM (SELECT * FROM F_usd ORDER by torg_date_2)) AS T1
+LEFT JOIN
+(SELECT quotation, kod, row_number() over(PARTITION BY kod) num2
+FROM (SELECT * FROM F_usd ORDER by torg_date_2)) AS T2
+ON T1.kod=T2.kod AND T1.num1-2=T2.num2)
+"""+self.filterStat+""") AS T1
+LEFT JOIN
+(SELECT torg_date_2, kod, num1, LOG(COALESCE(CAST(quotation as REAL)/CAST(quotation2 as REAL), 1)) xk
+FROM
+(SELECT torg_date_2, T1.kod, T1.quotation, T2.quotation quotation2, num1, num2
+FROM (SELECT *, row_number() over(PARTITION BY kod) num1
+FROM (SELECT * FROM F_usd ORDER by torg_date_2)) AS T1
+LEFT JOIN
+(SELECT quotation, kod, row_number() over(PARTITION BY kod) num2
+FROM (SELECT * FROM F_usd ORDER by torg_date_2)) AS T2
+ON T1.kod=T2.kod AND T1.num1-2=T2.num2)
+"""+self.filterStat+""") AS T2
+ON T1.kod=T2.kod aND T1.num1-1=T2.num1)
+GROUP BY kod) AS T2
+ON T1.kod=T2.kod
+GROUP BY T1.kod)
+GROUP BY kod)
+        """
+        cur = self.con.cursor()
+        tab = cur.execute(sqltabStat).fetchall()
+        Shead = list(description[0] for description in cur.description)
+        print(Shead)
+        self.tableStat.setColumnCount(len(Shead))
+        self.tableStat.setRowCount(len(tab))
+        self.tableStat.setHorizontalHeaderLabels(Shead)
+        tabrow = 0
+        for row in tab:
+            for i in range(len(row)):
+                self.tableStat.setItem(tabrow, i, QtWidgets.QTableWidgetItem(str(row[i])))
+            tabrow += 1
+        cur.close()
+        ...
 
 
     def filter_use(self):
@@ -498,7 +635,116 @@ class MainWindow(QMainWindow):
             self.loadtable()
         else:
             self.OutButTable_2.setText('Загрузите БД')
-            self.tableDB.setModel(self.EmptyTab)
+            self.tableDB.clear()
+
+    def filter_use_stat(self):
+        if self.connectDB:
+            self.Error2.setText('')
+            self.Error2.setVisible(False)
+            self.filterStat = ''
+            self.setFilter_stat()
+            self.loadtable_stat()
+        else:
+            self.Error2.setText('Загрузите БД')
+            self.Error2.setVisible(True)
+            self.tableStat.clear()
+
+    def setFilter_stat(self):
+        print('фильтр')
+        Dateot = ['1900', '01', '01']
+        Datedo = ['2022', '12', '31']
+        if (self.filterDate2_age_2.text() != ''):
+            if int(self.filterDate2_age_2.text()) < 1000 or len(self.filterDate2_age_2.text()) < 4:
+                self.filterDate2_age_2.setText('1000')
+            Datedo[0] = self.filterDate2_age_2.text()
+
+        if (self.filterDate2_month_2.text() != ''):
+            if int(self.filterDate2_month_2.text()) < 1:
+                self.filterDate2_month_2.setText('01')
+            if int(self.filterDate2_month_2.text()) > 12:
+                self.filterDate2_month_2.setText('12')
+            if len(self.filterDate2_month_2.text()) < 2:
+                self.filterDate2_month_2.setText('0' + self.filterDate2_month_2.text())
+            Datedo[1] = self.filterDate2_month_2.text()
+
+        if (self.filterDate2_day_2.text() != ''):
+            if int(self.filterDate2_day_2.text()) < 1:
+                self.filterDate2_day_2.setText('01')
+
+            if int(Datedo[0]) % 4 != 0:  # високосный ли год
+                if int(self.filterDate2_day_2.text()) > 28 and self.filterDate2_month_2.text() == '02':
+                    self.filterDate2_day_2.setText('28')
+            else:
+                if int(self.filterDate2_day_2.text()) > 29 and self.filterDate2_month_2.text() == '02':
+                    self.filterDate2_day_2.setText('29')
+
+            if int(self.filterDate2_day_2.text()) > 30:
+                if self.filterDate2_month_2.text() == '04' or self.filterDate2_month_2.text() == '06'\
+                        or self.filterDate2_month_2.text() == '09' or self.filterDate2_month_2.text() == '11':
+                    self.filterDate2_day_2.setText('30')
+                else:
+                    if int(self.filterDate2_day_2.text()) > 31 and self.filterDate2_month_2.text() != '02':
+                        self.filterDate2_day_2.setText('31')
+            if len(self.filterDate2_day_2.text()) < 2:
+                self.filterDate2_day_2.setText('0' + self.filterDate2_day_2.text())
+            Datedo[2] = self.filterDate2_day_2.text()
+
+        if (self.filterDate1_age_2.text() != ''):
+            if int(self.filterDate1_age_2.text()) < 1000 or len(self.filterDate1_age_2.text()) < 4:
+                self.filterDate1_age_2.setText('1000')
+            Dateot[0] = self.filterDate1_age_2.text()
+
+        if (self.filterDate1_month_2.text() != ''):
+            if int(self.filterDate1_month_2.text()) < 1:
+                self.filterDate1_month_2.setText('01')
+            if int(self.filterDate1_month_2.text()) > 12:
+                self.filterDate1_month_2.setText('12')
+            if len(self.filterDate1_month_2.text()) < 2:
+                self.filterDate1_month_2.setText('0' + self.filterDate1_month_2.text())
+            Dateot[1] = self.filterDate1_month_2.text()
+
+        if (self.filterDate1_day_2.text() != ''):
+            if int(self.filterDate1_day_2.text()) < 1:
+                self.filterDate1_day_2.setText('01')
+
+            if int(Dateot[0]) % 4 != 0:  # високосный ли год
+                if int(self.filterDate1_day_2.text()) > 28 and self.filterDate1_month_2.text() == '02':
+                    self.filterDate1_day_2.setText('28')
+            else:
+                if int(self.filterDate1_day_2.text()) > 29 and self.filterDate1_month_2.text() == '02':
+                    self.filterDate1_day_2.setText('29')
+
+            if int(self.filterDate1_day_2.text()) > 30:
+                if self.filterDate1_month_2.text() == '04' or self.filterDate1_month_2.text() == '06' or self.filterDate1_month_2.text() == '09'\
+                        or self.filterDate1_month_2.text() == '11':
+                    self.filterDate1_day_2.setText('30')
+                else:
+                    if int(self.filterDate1_day_2.text()) > 31 and self.filterDate1_month_2.text() != '02':
+                        self.filterDate1_day_2.setText('31')
+            if len(self.filterDate1_day_2.text()) < 2:
+                self.filterDate1_day_2.setText('0' + self.filterDate1_day_2.text())
+            Dateot[2] = self.filterDate1_day_2.text()
+        flag_coret = True
+        if int(Dateot[0]) > int(Datedo[0]):
+            flag_coret = False
+        elif int(Dateot[0]) == int(Datedo[0]):
+            if int(Dateot[1]) > int(Datedo[1]):
+                flag_coret = False
+            elif int(Dateot[1]) == int(Datedo[1]):
+                if int(Dateot[2]) > int(Datedo[2]):
+                    flag_coret = False
+
+        if flag_coret:
+            self.Error2.setVisible(False)
+            self.Error2.setText('')
+            DateOT = Dateot[0] + '.' + Dateot[1] + '.' + Dateot[2]
+            DateDO = Datedo[0] + '.' + Datedo[1] + '.' + Datedo[2]
+            self.filterStat = self.filterStat + "torg_date_2>='" + DateOT + "' AND torg_date_2<='" + DateDO + "'"
+            print(self.filterStat)
+        else:
+            self.Error2.setText('Неверный диапазон')
+            self.Error2.setVisible(True)
+
 
     def setFilter(self):
         Dateot = ['1900', '01', '01']
@@ -600,6 +846,9 @@ class MainWindow(QMainWindow):
                 filt5 = "kod = '" + self.KodBox.currentText() + "'"
                 self.filter = self.filter + ' AND ' + filt5
             print(self.filter)
+        else:
+            self.Error.setText('Неверный диапазон')
+            self.Error.setVisible(True)
 
 
 
@@ -608,8 +857,10 @@ def application():
     window = MainWindow()
     widget=QtWidgets.QStackedWidget()
     widget.addWidget(window)
-    widget.setMinimumWidth(1050)
-    widget.setMinimumHeight(630)
+    widget.setMinimumWidth(1060)
+    widget.setMinimumHeight(650)
+    widget.setMaximumWidth(1060)
+    widget.setMaximumHeight(650)
     widget.show()
     app.exec()
 
