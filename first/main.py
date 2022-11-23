@@ -550,7 +550,7 @@ class MainWindow(QMainWindow):
             self.filterStat+="WHERE "+self.filterStat
         sqltabStat = \
         """
-SELECT kod, round(Xср1*10000, 5) Xср_x100, round(DESP1*100000, 5) Dx1000, round((Xср1-Xср2)*1000000, 5) TEND_Xср, round((DESP1-DESP2)*10000000, 5) TEND_D
+SELECT kod, round(Xср1*10000, 5) Xср, round(DESP1*100000, 5) D, round((Xср1-Xср2)*1000000, 5) TEND_Xср, round((DESP1-DESP2)*10000000, 5) TEND_D
 FROM
 (SELECT torg_date_2, kod, Xср1, Xср2, AVG(x2_1) as DESP1, AVG(x2_2) as DESP2
 FROM
@@ -620,8 +620,21 @@ GROUP BY kod)
         self.tableStat.setHorizontalHeaderLabels(Shead)
         tabrow = 0
         for row in tab:
-            for i in range(len(row)):
-                self.tableStat.setItem(tabrow, i, QtWidgets.QTableWidgetItem(str(row[i])))
+            self.tableStat.setItem(tabrow, 0, QtWidgets.QTableWidgetItem(str(row[0])))
+            self.tableStat.setItem(tabrow, 1, QtWidgets.QTableWidgetItem(str(row[1])+"e-4"))
+            self.tableStat.setItem(tabrow, 2, QtWidgets.QTableWidgetItem(str(row[2]) + "e-5"))
+            if row[3]>0:
+                self.tableStat.setItem(tabrow, 3, QtWidgets.QTableWidgetItem("UP"))
+            elif row[3]==0:
+                self.tableStat.setItem(tabrow, 3, QtWidgets.QTableWidgetItem("FIXED"))
+            else:
+                self.tableStat.setItem(tabrow, 3, QtWidgets.QTableWidgetItem("DOWN"))
+            if row[4]>0:
+                self.tableStat.setItem(tabrow, 4, QtWidgets.QTableWidgetItem("UP"))
+            elif row[4]==0:
+                self.tableStat.setItem(tabrow, 4, QtWidgets.QTableWidgetItem("FIXED"))
+            else:
+                self.tableStat.setItem(tabrow, 4, QtWidgets.QTableWidgetItem("DOWN"))
             tabrow += 1
         cur.close()
         ...
