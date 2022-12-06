@@ -6,6 +6,11 @@ import sqlite3
 import os
 import math
 
+import datetime
+
+from fpdf import FPDF
+
+
 import sys
 
 def power1(D, i):
@@ -214,7 +219,6 @@ class MainWindow(QMainWindow):
         self.filterBut.clicked.connect(self.filter_use)
         self.filterBut_2.clicked.connect(self.filter_use_stat)
         self.tableDB.setSortingEnabled(True)
-        #self.tableStat.setSortingEnabled(True)
         self.Error.setVisible(False)
         self.Error2.setVisible(False)
         self.ErrorBUT.setVisible(False)
@@ -223,6 +227,19 @@ class MainWindow(QMainWindow):
         self.ChangBut.clicked.connect(self.chaninBD)
         self.tableDB.setEditTriggers(QtWidgets.QTableWidget.EditTrigger.NoEditTriggers)
         self.tableStat.setEditTriggers(QtWidgets.QTableWidget.EditTrigger.NoEditTriggers)
+        self.Print.setEnabled(False)
+        self.Print.clicked.connect(self.print_otch_F)
+        self.print_F_usd=[]
+        self.date_print_F_usd_ot=''
+        self.date_print_F_usd_do = ''
+        self.kod_print_F_usd = ''
+        self.quo_print_F_usd_ot = ''
+        self.quo_print_F_usd_do = ''
+        self.Print_stat.setEnabled(False)
+        self.Print_stat.clicked.connect(self.print_otch_stat)
+        self.print_stat = []
+        self.date_print_stat_ot = ''
+        self.date_print_stat_do = ''
 
 
         self.filterDate1_age.setValidator(QIntValidator())
@@ -265,6 +282,143 @@ class MainWindow(QMainWindow):
         self.RB2.setVisible(False)
         self.RB1.toggled.connect(self.RB_z)
         self.RB2.toggled.connect(self.RB_z)
+
+    def print_otch_F(self):
+        now=datetime.datetime.now()
+        pdf = FPDF()
+        spacing = 1.2
+        pdf.add_page()
+        pdf.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
+        pdf.set_font('DejaVu', size=20)
+        pdf.cell(200, 10, txt="Отчет по фьючерсам", ln=1, align="C")
+        pdf.set_font('DejaVu', size=10)
+        day=''
+        month=''
+        if len(str(now.month))==1:
+            month='0'+str(now.month)
+        else:
+            month = str(now.month)
+        if len(str(now.day)) == 1:
+            day = '0' + str(now.day)
+        else:
+            day = str(now.day)
+        pdf.cell(200, 10, txt=f'Дата создания: {day}.{month}.{now.year}', ln=1, align="L")
+        pdf.set_font('DejaVu', size=14)
+        dateFUSD='За период: '
+        if self.date_print_F_usd_ot!='':
+            dateFUSD+="с "+str(self.date_print_F_usd_ot)+' '
+        if self.date_print_F_usd_do!='':
+            dateFUSD += "по " + str(self.date_print_F_usd_do)
+        if self.date_print_F_usd_ot=='' and self.date_print_F_usd_do=='':
+            dateFUSD="За все время"
+        pdf.cell(200, 10, txt=dateFUSD, ln=1, align="L")
+        if self.kod_print_F_usd!='':
+            pdf.cell(200, 10, txt="По фьючерсу: "+self.kod_print_F_usd, ln=1, align="L")
+        else:
+            pdf.cell(200, 10, txt="По всем фьючерсам", ln=1, align="L")
+        if self.quo_print_F_usd_ot!='' or self.quo_print_F_usd_do!='':
+            quoFUSD = 'Отсортированных по цене: '
+            if self.quo_print_F_usd_ot != '':
+                quoFUSD += "от " + str(self.quo_print_F_usd_ot) + ' '
+            if self.quo_print_F_usd_ot != '':
+                quoFUSD += "до " + str(self.quo_print_F_usd_do)
+            pdf.cell(200, 10, txt=quoFUSD, ln=1, align="L")
+        pdf.set_font("Arial", size=14)
+        col_width = pdf.w / 4.5
+        row_height = pdf.font_size
+        pdf.set_font('DejaVu', size=14)
+        pdf.cell(col_width * 0.3, row_height * spacing, txt='', border=1)
+        pdf.set_font('DejaVu', size=12)
+        pdf.cell(col_width * 0.6, row_height * spacing, txt='Дата торгов', border=1)
+        pdf.cell(col_width * 0.7, row_height * spacing, txt='Фьючерс', border=1)
+        pdf.cell(col_width * 0.5, row_height * spacing, txt='Цена', border=1)
+        pdf.set_font('DejaVu', size=12)
+        pdf.cell(col_width * 0.7, row_height * spacing, txt='Объем продаж', border=1)
+        pdf.cell(col_width * 0.4, row_height * spacing, txt='Xk', border=1)
+        pdf.ln(row_height * spacing)
+        pdf.set_font("Arial", size=14)
+        for i in range(len(self.print_F_usd)):
+            pdf.cell(col_width * 0.3, row_height * spacing, txt=str(i+1), border=1)
+            pdf.cell(col_width * 0.6, row_height * spacing, txt=str(self.print_F_usd[i][0]), border=1)
+            pdf.cell(col_width * 0.7, row_height * spacing, txt=str(self.print_F_usd[i][1]), border=1)
+            pdf.cell(col_width * 0.5, row_height * spacing, txt=str(self.print_F_usd[i][2]), border=1)
+            pdf.cell(col_width * 0.7, row_height * spacing, txt=str(self.print_F_usd[i][3]), border=1)
+            pdf.cell(col_width * 0.4, row_height * spacing, txt=str(self.print_F_usd[i][4]), border=1)
+            pdf.ln(row_height * spacing)
+
+
+        pdf.output(f"Отчет {day}.{month}.{now.year}.pdf")
+
+    def print_otch_stat(self):
+        now = datetime.datetime.now()
+        pdf = FPDF()
+        spacing = 1.2
+        pdf.add_page()
+        pdf.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
+        pdf.set_font('DejaVu', size=20)
+        pdf.cell(200, 10, txt="Статистика по фьючерсам", ln=1, align="C")
+
+        pdf.set_font('DejaVu', size=10)
+        day = ''
+        month = ''
+        if len(str(now.month)) == 1:
+            month = '0' + str(now.month)
+        else:
+            month = str(now.month)
+        if len(str(now.day)) == 1:
+            day = '0' + str(now.day)
+        else:
+            day = str(now.day)
+        pdf.cell(200, 10, txt=f'Дата создания: {day}.{month}.{now.year}', ln=1, align="L")
+
+        pdf.set_font('DejaVu', size=14)
+        dateFUSD = 'За период: '
+        if self.date_print_stat_ot != '':
+            dateFUSD += "с " + str(self.date_print_stat_ot) + ' '
+        if self.date_print_stat_do != '':
+            dateFUSD += "по " + str(self.date_print_stat_do)
+        if self.date_print_stat_ot == '' and self.date_print_stat_do == '':
+            dateFUSD = "За все время"
+        pdf.cell(200, 10, txt=dateFUSD, ln=1, align="L")
+
+        pdf.set_font("Arial", size=14)
+        col_width = pdf.w / 4.5
+        row_height = pdf.font_size
+        pdf.set_font('DejaVu', size=14)
+        pdf.cell(col_width * 0.3, row_height * spacing, txt='', border=1)
+        pdf.cell(col_width * 0.7, row_height * spacing, txt='Фьючерс', border=1)
+        pdf.cell(col_width * 0.7, row_height * spacing, txt='Xcp', border=1)
+        pdf.set_font('DejaVu', size=13)
+        pdf.cell(col_width * 0.7, row_height * spacing, txt='Дисперсия (D)', border=1)
+        pdf.set_font('DejaVu', size=12)
+        pdf.cell(col_width * 0.6, row_height * spacing, txt='Измен. Xcp', border=1)
+        pdf.set_font('DejaVu', size=12)
+        pdf.cell(col_width * 0.6, row_height * spacing, txt="Измен. D", border=1)
+        pdf.ln(row_height * spacing)
+        pdf.set_font("Arial", size=14)
+        for i in range(len(self.print_stat)):
+            pdf.cell(col_width * 0.3, row_height * spacing, txt=str(i + 1), border=1)
+            pdf.cell(col_width * 0.7, row_height * spacing, txt=str(self.print_stat[i][0]), border=1)
+            pdf.cell(col_width * 0.7, row_height * spacing, txt=str(self.print_stat[i][1])+'e-4', border=1)
+            pdf.cell(col_width * 0.7, row_height * spacing, txt=str(self.print_stat[i][2])+'e-5', border=1)
+
+            if self.print_stat[i][3]>0:
+                pdf.cell(col_width * 0.6, row_height * spacing, txt='UP', border=1)
+            elif self.print_stat[i][3]==0:
+                pdf.cell(col_width * 0.6, row_height * spacing, txt='FIXED', border=1)
+            else:
+                pdf.cell(col_width * 0.6, row_height * spacing, txt='DOWN', border=1)
+            if self.print_stat[i][4]>0:
+                pdf.cell(col_width * 0.6, row_height * spacing, txt='UP', border=1)
+            elif self.print_stat[i][4]==0:
+                pdf.cell(col_width * 0.6, row_height * spacing, txt='FIXED', border=1)
+            else:
+                pdf.cell(col_width * 0.6, row_height * spacing, txt='DOWN', border=1)
+
+            pdf.ln(row_height * spacing)
+
+
+        pdf.output(f"Отчет по статистике {day}.{month}.{now.year}.pdf")
 
     def addinBD(self):
         if self.connectDB:
@@ -508,21 +662,21 @@ class MainWindow(QMainWindow):
 
     def loadtable(self):
         self.db.open()
+        self.tableDB.setSortingEnabled(False)
         if self.Name_table == "F_usd":
             self.sqltabload = \
-            """SELECT torg_date, kod, quotation, num_contr, LOG(COALESCE(round (CAST(quotation as REAL)/CAST(quo2 as REAL),4), 1)) xk
+            """SELECT torg_date, kod, quotation, num_contr, xk
+            FROM (SELECT torg_date, kod, quotation, num_contr, LOG(COALESCE(CAST(quotation as REAL)/CAST(quo2 as REAL), 1)) xk, torg_date_2
                FROM 
                (SELECT torg_date, kod, quotation, num_contr, torg_date_2, quo2, COALESCE(kod2, kod) kod2, num2
                  FROM
                  (SELECT *, row_number() over(PARTITION BY kod) num1 FROM F_usd) as T1
                  LEFT JOIN 
                  (SELECT quotation quo2, kod kod2, row_number() over(PARTITION BY kod) num2 FROM F_usd) as T2
-               ON T1.num1-2=T2.num2 AND  T1.kod=T2.kod2
+               ON T1.num1-2=T2.num2 AND  T1.kod=T2.kod2))
             """
             if self.filter!='':
-                self.sqltabload+=" WHERE "+self.filter+")"
-            else:
-                self.sqltabload +=")"
+                self.sqltabload+=" WHERE "+self.filter
             self.sqltabload+=" ORDER BY "+self.sort_F_usd
         if self.Name_table == "dataisp":
             self.sqltabload = "SELECT kod, exec_date FROM dataisp"
@@ -535,14 +689,23 @@ class MainWindow(QMainWindow):
         print(Shead)
         self.tableDB.setColumnCount(len(Shead))
         self.tableDB.setRowCount(len(tab))
-        self.tableDB.setHorizontalHeaderLabels(Shead)
-        print(len(tab))
+        if self.Name_table == "F_usd":
+            self.tableDB.setHorizontalHeaderLabels(['Дата торогов', 'Фьючерс', 'Цена', 'Объем продаж', 'Xk'])
+            self.Print.setEnabled(True)
+        else:
+            self.tableDB.setHorizontalHeaderLabels(['Фьючерс', 'Дата исполнения'])
+            self.Print.setEnabled(False)
         tabrow=0
         for row in tab:
             for i in range(len(row)):
-                self.tableDB.setItem(tabrow, i, QtWidgets.QTableWidgetItem(str(row[i])))
+                if row[i]==0:
+                    self.tableDB.setItem(tabrow, i, QtWidgets.QTableWidgetItem('0.0'))
+                else:
+                    self.tableDB.setItem(tabrow, i, QtWidgets.QTableWidgetItem(str(row[i])))
             tabrow+=1
         cur.close()
+        self.print_F_usd = tab
+        self.tableDB.setSortingEnabled(True)
 
     def loadtable_stat(self):
         self.db.open()
@@ -619,6 +782,7 @@ GROUP BY kod)
         self.tableStat.setColumnCount(len(Shead))
         self.tableStat.setRowCount(len(tab))
         self.tableStat.setHorizontalHeaderLabels(Shead)
+        self.tableStat.setHorizontalHeaderLabels(['Фьючерс', 'Xcp', 'Дисперсия', 'Изменение Xcp', 'Изменение D'])
         tabrow = 0
         for row in tab:
             self.tableStat.setItem(tabrow, 0, QtWidgets.QTableWidgetItem(str(row[0])))
@@ -638,8 +802,8 @@ GROUP BY kod)
                 self.tableStat.setItem(tabrow, 4, QtWidgets.QTableWidgetItem("DOWN"))
             tabrow += 1
         cur.close()
-        ...
-
+        self.print_stat = tab
+        self.Print_stat.setEnabled(True)
 
     def filter_use(self):
         if self.connectDB:
@@ -664,7 +828,6 @@ GROUP BY kod)
             self.tableStat.clear()
 
     def setFilter_stat(self):
-        print('фильтр')
         Dateot = ['1900', '01', '01']
         Datedo = ['2022', '12', '31']
         if (self.filterDate2_age_2.text() != ''):
@@ -749,8 +912,17 @@ GROUP BY kod)
                     flag_coret = False
 
         if flag_coret:
+            if self.filterDate1_age_2.text()!='':
+                self.date_print_stat_ot = Dateot[2] + '.' + Dateot[1] + '.' + Dateot[0]
+            else:
+                self.date_print_stat_ot = ''
+            if self.filterDate2_age_2.text()!='':
+                self.date_print_stat_do = Datedo[2] + '.' + Datedo[1] + '.' + Datedo[0]
+            else:
+                self.date_print_stat_do = ''
             self.Error2.setVisible(False)
             self.Error2.setText('')
+
             DateOT = Dateot[0] + '.' + Dateot[1] + '.' + Dateot[2]
             DateDO = Datedo[0] + '.' + Datedo[1] + '.' + Datedo[2]
             self.filterStat = self.filterStat + "torg_date_2>='" + DateOT + "' AND torg_date_2<='" + DateDO + "'"
@@ -758,7 +930,6 @@ GROUP BY kod)
         else:
             self.Error2.setText('Неверный диапазон')
             self.Error2.setVisible(True)
-
 
     def setFilter(self):
         Dateot = ['1900', '01', '01']
@@ -844,22 +1015,38 @@ GROUP BY kod)
         if flag_coret:
             self.Error.setVisible(False)
             self.Error.setText('')
+            if self.filterDate1_age.text()!='':
+                self.date_print_F_usd_ot = Dateot[2] + '.' + Dateot[1] + '.' + Dateot[0]
+            else:
+                self.date_print_F_usd_ot = ''
+            if self.filterDate2_age.text()!='':
+                self.date_print_F_usd_do = Datedo[2] + '.' + Datedo[1] + '.' + Datedo[0]
+            else:
+                self.date_print_F_usd_do = ''
             DateOT = Dateot[0] + '.' + Dateot[1] + '.' + Dateot[2]
             DateDO = Datedo[0] + '.' + Datedo[1] + '.' + Datedo[2]
             self.filter = self.filter + "torg_date_2>='" + DateOT + "' AND torg_date_2<='" + DateDO + "'"
 
             if (self.filterq1.text() != ''):
+                self.quo_print_F_usd_ot=self.filterq1.text()
                 filt3 = 'CAST(quotation as real)>=' + self.filterq1.text()
                 self.filter = self.filter + ' AND ' + filt3
+            else:
+                self.quo_print_F_usd_ot = ''
 
             if (self.filterq2.text() != ''):
+                self.quo_print_F_usd_do = self.filterq2.text()
                 filt4 = 'CAST(quotation as real)<=' + self.filterq2.text()
                 self.filter = self.filter + ' AND ' + filt4
+            else:
+                self.quo_print_F_usd_do = ''
 
             if (self.KodBox.currentText() != ''):
+                self.kod_print_F_usd=self.KodBox.currentText()
                 filt5 = "kod = '" + self.KodBox.currentText() + "'"
                 self.filter = self.filter + ' AND ' + filt5
-            print(self.filter)
+            else:
+                self.kod_print_F_usd = ''
         else:
             self.Error.setText('Неверный диапазон')
             self.Error.setVisible(True)
