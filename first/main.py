@@ -14,9 +14,10 @@ from fpdf import FPDF
 import sys
 
 def power1(D, i):
+    print(D)
     return D**i
 def log_10(D):
-    return round(math.log10(float(D)),4)
+    return round(math.log10(float(D)), 4)
 
 
 
@@ -145,8 +146,6 @@ class addWindow(QMainWindow):
             qry.exec()
             self.MainWin.loadtable()
             self.MainWin.appdate_KodBox()
-
-
 
 
 
@@ -706,8 +705,10 @@ class MainWindow(QMainWindow):
         cur.close()
         self.print_F_usd = tab
         self.tableDB.setSortingEnabled(True)
+        self.loadtable_stat()
 
     def loadtable_stat(self):
+        print('gg')
         self.db.open()
         if self.filterStat!='':
             self.filterStat="WHERE "+self.filterStat
@@ -715,9 +716,9 @@ class MainWindow(QMainWindow):
         """
 SELECT kod, round(Xср1*10000, 5) Xср, round(DESP1*100000, 5) D, round((Xср1-Xср2)*1000000, 5) TEND_Xср, round((DESP1-DESP2)*10000000, 5) TEND_D
 FROM
-(SELECT torg_date_2, kod, Xср1, Xср2, AVG(x2_1) as DESP1, AVG(x2_2) as DESP2
+(SELECT torg_date_2, kod, Xср1, COALESCE(Xср2,0) Xср2, AVG(x2_1) as DESP1, COALESCE(AVG(x2_2),0) as DESP2
 FROM
-(SELECT T1.torg_date_2, T1.kod, T1.xk1, T1.xk2, T2.Xср1, T2.Xср2, POWER(T1.xk1-T2.Xср1,2) as x2_1, POWER(T1.xk2-T2.Xср2,2) as x2_2
+(SELECT T1.torg_date_2, T1.kod, T1.xk1, T1.xk2, T2.Xср1, T2.Xср2, POWER(COALESCE(T1.xk1-T2.Xср1,0),2) as x2_1, POWER(COALESCE(T1.xk2-T2.Xср2,0),2) as x2_2
 FROM
 (SELECT T1.torg_date_2, T1.kod, T1.num1, T1.xk xk1, COALESCE(T2.xk, 0) xk2
 FROM
